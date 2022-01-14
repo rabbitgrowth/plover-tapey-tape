@@ -44,6 +44,7 @@ class TapeyTape:
         seconds = 0 if self.then is None else (now - self.then).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
         bar     = ('+' * width).rjust(self.bar_max_width)
+        space   = ' ' if bar else '' # so that setting width to 0 effectively hides the whole thing
         self.then = now
 
         keys  = set(stroke.steno_keys)
@@ -51,7 +52,7 @@ class TapeyTape:
         stars = '*' * len(self.old)
         translation = ' '.join(action.text for action in self.new if action.text is not None)
 
-        self.file.write(f'{bar} |{steno}| {stars}{translation}\n')
+        self.file.write(f'{bar}{space}|{steno}| {stars}{translation}\n')
         self.file.flush()
 
     def on_translated(self, old, new):
