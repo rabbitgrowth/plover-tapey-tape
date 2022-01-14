@@ -1,5 +1,4 @@
 import json
-import os
 import plover
 from datetime import datetime
 from pathlib  import Path
