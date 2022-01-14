@@ -36,4 +36,14 @@ are as follows:
 - `bar_time_unit`: The amount of time in seconds each `+` sign represents.
   Defaults to `0.2`.
 - `bar_max_width`: The maximum number of `+` signs shown. Set this to `0`
-  to hide the bar. Defaults to `5`.
+  to hide the bars. Defaults to `5`.
+
+For example, to stretch out the bars to twice the default width,
+you can use
+
+```json
+{
+    "bar_time_unit": 0.1,
+    "bar_max_width": 10
+}
+```
