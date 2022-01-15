@@ -82,7 +82,7 @@ class TapeyTape:
 
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
         star  = '*' if self.old else ''
-        translation = ' '.join(filter(None, map(self.show_action, self.new)))
+        translation = '' if stroke.is_correction else ' '.join(filter(None, map(self.show_action, self.new)))
 
         self.file.write(f'{bar}{space}|{steno}| {star}{translation}\n')
         self.file.flush()
