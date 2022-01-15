@@ -9,7 +9,10 @@ class TapeyTape:
         if not action.text:
             return None
         result = ''
-        if action.prev_attach:
+        # To reduce visual clutter, don't show & and ^ at the same time
+        if action.glue:
+            result += '&'
+        elif action.prev_attach:
             result += '^'
         result += action.text
         if action.next_attach:
