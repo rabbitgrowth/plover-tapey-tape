@@ -31,6 +31,9 @@ class TapeyTape:
         except (KeyError, ValueError):
             self.bar_max_width = 5
 
+        # e.g., 1- -> S-, 2- -> T-, etc.
+        self.numbers = {number: letter for letter, number in plover.system.NUMBERS.items()}
+
         self.engine.hook_connect('stroked',    self.on_stroked)
         self.engine.hook_connect('translated', self.on_translated)
         self.file = config_dir.joinpath('tapey_tape.txt').open('a')
@@ -51,7 +54,14 @@ class TapeyTape:
         space   = ' ' if bar else '' # so that setting width to 0 effectively hides the whole thing
         self.then = now
 
-        keys  = set(stroke.steno_keys)
+        keys = set()
+        for key in stroke.steno_keys:
+            if key in self.numbers:                # e.g., if key is 1-
+                keys.add(self.numbers[key])        #   add the corresponding S-
+                keys.add(plover.system.NUMBER_KEY) #   and #
+            else:                                  # if key is S-
+                keys.add(key)                      #   add S-
+
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
         stars = '*' * len(self.old)
         translation = '+'.join(action.text for action in self.new if action.text)
