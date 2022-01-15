@@ -6,6 +6,10 @@ from pathlib  import Path
 class TapeyTape:
     @staticmethod
     def show_action(action):
+        if action.combo:
+            return f'#{action.combo}'
+        if action.command:
+            return f'#{action.command}'
         if not action.text:
             return None
         result = ''
