@@ -17,7 +17,7 @@ class TapeyTape:
         elif action.prev_attach:
             result += '^'
         if action.text:
-            result += action.text
+            result += action.text.replace('\n', '\\n')
         if action.next_attach:
             result += '^'
         return result
