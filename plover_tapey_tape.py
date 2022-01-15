@@ -63,10 +63,10 @@ class TapeyTape:
                 keys.add(key)                      #   add S-
 
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
-        stars = '*' * len(self.old)
+        star  = '*' if self.old else ''
         translation = '+'.join(action.text for action in self.new if action.text)
 
-        self.file.write(f'{bar}{space}|{steno}| {stars}{translation}\n')
+        self.file.write(f'{bar}{space}|{steno}| {star}{translation}\n')
         self.file.flush()
 
     def on_translated(self, old, new):
