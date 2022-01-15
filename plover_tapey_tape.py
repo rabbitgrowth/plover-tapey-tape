@@ -4,6 +4,24 @@ from datetime import datetime
 from pathlib  import Path
 
 class TapeyTape:
+    @staticmethod
+    def show_action(action):
+        if action.combo:
+            return f'#{action.combo}'
+        if action.command:
+            return f'#{action.command}'
+        result = ''
+        # To reduce visual clutter, don't show & and ^ at the same time
+        if action.glue:
+            result += '&'
+        elif action.prev_attach:
+            result += '^'
+        if action.text:
+            result += action.text.replace('\n', '\\n')
+        if action.next_attach:
+            result += '^'
+        return result
+
     def __init__(self, engine):
         self.engine = engine
         self.then = None # time of the last stroke
@@ -64,7 +82,7 @@ class TapeyTape:
 
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
         star  = '*' if self.old else ''
-        translation = '+'.join(action.text for action in self.new if action.text)
+        translation = ' '.join(filter(None, map(self.show_action, self.new)))
 
         self.file.write(f'{bar}{space}|{steno}| {star}{translation}\n')
         self.file.flush()
