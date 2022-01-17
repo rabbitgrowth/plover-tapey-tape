@@ -31,19 +31,47 @@ get a real-time feed.
 
 To configure this plugin, create a JSON file named `tapey_tape.json`
 in Plover’s configuration directory (see above). The available options
-are as follows:
+are:
 
 - `bar_time_unit`: The amount of time in seconds each `+` sign represents.
   Defaults to `0.2`.
 - `bar_max_width`: The maximum number of `+` signs shown. Set this to `0`
   to hide the bars. Defaults to `5`.
+- `translation_style`:
+    - `minimal`: Only show characters that are actually output.
+    - `mixed`: Also show “invisible” information like attachment (`^`),
+      glue (`&`), and commands (`#`).
+    - `dictionary`: Show the definitions in your dictionary. If a stroke
+      is not defined, show `/`. This is the default.
 
-For example, to stretch out the bars to twice the default width,
-you can use
+```
+                          minimal:  mixed:    dictionary:
+
+|    P HR O       LG    |           #TOGGLE   {PLOVER:TOGGLE}
+|    P H       R        | Mr.       Mr.       Mr.{-|}
+|    PW R O  U  PB      | Brown     Brown     brown
+|      H  O EU    L   DZ| HOEULDZ   HOEULDZ   /
+|          *            | *         *         *
+|      H  O E     L   DZ| holds     holds     holds
+|        A  EU          | a         a         a
+|    P     *    P       | P         &P        {&P}
+|      H   *            | h         &h        {>}{&h}
+|  TK      *    P       | D         &D        {&D}
+|  TK       E      G    | degree    degree    degree
+|  T P H                | in        in        in
+|  T P H AO* U R        | neuro     neuro^    {neuro^}
+| S K   RAO EU  PB   S  | science   ^science  science
+|  T P          P L     | .         ^.        {.}
+| S K W RA   U R B G S  |           ^\n\n^    {^\n\n^}{-|}
+```
+
+For example, to stretch out the bars to twice the default width and set
+the translation style to `minimal`, use
 
 ```json
 {
     "bar_time_unit": 0.1,
-    "bar_max_width": 10
+    "bar_max_width": 10,
+    "translation_style": "minimal"
 }
 ```
