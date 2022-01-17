@@ -4,6 +4,8 @@ from datetime import datetime
 from pathlib  import Path
 
 class TapeyTape:
+    SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
+
     @staticmethod
     def show_action(action):
         if action.combo:
@@ -18,7 +20,7 @@ class TapeyTape:
             result += '&'
         elif action.prev_attach:
             result += '^'
-        result += action.text.replace('\n', '\\n')
+        result += action.text
         if action.next_attach:
             result += '^'
         return result
@@ -108,6 +110,8 @@ class TapeyTape:
                 definition = translations[-1].english
                 output = '/' if definition is None else definition
                 # TODO: don't show numbers as untranslate
+
+        output = output.translate(self.SHOW_WHITESPACE)
 
         self.file.write(f'{bar}{space}|{steno}| {star}{output}\n')
         self.file.flush()
