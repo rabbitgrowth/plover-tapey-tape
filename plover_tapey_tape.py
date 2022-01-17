@@ -30,7 +30,6 @@ class TapeyTape:
 
     def start(self):
         config_dir = Path(plover.oslayer.config.CONFIG_DIR)
-
         try:
             with config_dir.joinpath('tapey_tape.json').open() as f:
                 config = json.load(f)
@@ -48,6 +47,11 @@ class TapeyTape:
             self.bar_max_width = min(max(int(config['bar_max_width']), 0), 100)
         except (KeyError, ValueError):
             self.bar_max_width = 5
+
+        translation_style = config.get('translation_style')
+        self.translation_style = ('dictionary'
+                                  if translation_style not in ('mixed', 'minimal')
+                                  else translation_style)
 
         # e.g., 1- -> S-, 2- -> T-, etc.
         self.numbers = {number: letter for letter, number in plover.system.NUMBERS.items()}
@@ -79,12 +83,32 @@ class TapeyTape:
                 keys.add(plover.system.NUMBER_KEY) #   and #
             else:                                  # if key is S-
                 keys.add(key)                      #   add S-
-
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
-        star  = '*' if self.old else ''
-        translation = '' if stroke.is_correction else ' '.join(filter(None, map(self.show_action, self.new)))
 
-        self.file.write(f'{bar}{space}|{steno}| {star}{translation}\n')
+        star = '*' if self.old else ''
+
+        if stroke.is_correction:
+            # Just show * for undo strokes as the user probably expects
+            output = ''
+        elif self.translation_style == 'mixed':
+            output = ' '.join(filter(None, map(self.show_action, self.new)))
+        else:
+            translations = self.engine.translator_state.translations
+            # At this point we know that the stroke is not an undo stroke, and
+            # I can't think of a scenario where the stroke is not an undo stroke
+            # but the translation stack is empty. But just to be safe...
+            if not translations:
+                output = ''
+            elif self.translation_style == 'minimal':
+                formatter = plover.formatting.RetroFormatter([translations[-1]])
+                output = ''.join(formatter.last_fragments(99))
+            else:
+                assert self.translation_style == 'dictionary'
+                definition = translations[-1].english
+                output = '/' if definition is None else definition
+                # TODO: don't show numbers as untranslate
+
+        self.file.write(f'{bar}{space}|{steno}| {star}{output}\n')
         self.file.flush()
 
     def on_translated(self, old, new):
