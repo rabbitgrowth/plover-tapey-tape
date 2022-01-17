@@ -10,14 +10,15 @@ class TapeyTape:
             return f'#{action.combo}'
         if action.command:
             return f'#{action.command}'
+        if not action.text:
+            return ''
         result = ''
         # To reduce visual clutter, don't show & and ^ at the same time
         if action.glue:
             result += '&'
         elif action.prev_attach:
             result += '^'
-        if action.text:
-            result += action.text.replace('\n', '\\n')
+        result += action.text.replace('\n', '\\n')
         if action.next_attach:
             result += '^'
         return result
