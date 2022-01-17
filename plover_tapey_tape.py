@@ -12,6 +12,9 @@ class TapeyTape:
             return f'#{action.combo}'
         if action.command:
             return f'#{action.command}'
+        # The assumption being that an Action can't contain combo/command
+        # and text at the same time. You can define a stroke as, e.g.,
+        # {#...}..., but that will get split into two Actions.
         if not action.text:
             return ''
         result = ''
