@@ -52,7 +52,7 @@ are:
       is not defined, show `/`. This is the default.
 
 ```
-                          minimal:  mixed:    dictionary:
+                          minimal:  mixed:    dictionary (default):
 
 |    P HR O       LG    |           #TOGGLE   {PLOVER:TOGGLE}
 |    P H       R        | Mr.       Mr.       Mr.{-|}
