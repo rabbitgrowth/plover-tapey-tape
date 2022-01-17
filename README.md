@@ -3,18 +3,18 @@
 `plover-tapey-tape` is an alternative to Plover’s built-in paper tape.
 It provides a side-by-side view of strokes and translations as well as
 extra information such as bars to the left representing how long each
-stroke took.
+stroke took so that you can see which words you struggle with the most.
 
 ```
-      |   KP   A              |
-   ++ |      H AO*E  R     S  | Here's
+      |   KP   A              | {}{-|}
+   ++ |      H AO*E  R     S  | here's
     + |     WH A              | what
       |  T                    | it
- ++++ |      HRAO      B G   Z| looks
+ ++++ |      HRAO      B G   Z| look {^s}
    ++ |      HRAO EU   B G    | like
     + |  T P H                | in
     + |    P  RA       B G S  | practice
-    + |  T P          P L     | .
+    + |  T P          P L     | {.}
 ```
 
 As you write, the paper tape is written in real time to a file named
@@ -27,9 +27,16 @@ As you write, the paper tape is written in real time to a file named
 You can review the file afterwards or use a tool like `tail -f` to
 get a real-time feed.
 
+## Activation
+
+After you’ve installed this plugin, you have to enable it manually
+by opening the main Plover window, going to Configure → Plugins, and
+checking the box next to `plover-tapey-tape`.
+
 ## Configuration
 
-To configure this plugin, create a JSON file named `tapey_tape.json`
+If you want to customize the way the paper tape is displayed, you can
+configure this plugin by creating a JSON file named `tapey_tape.json`
 in Plover’s configuration directory (see above). The available options
 are:
 
