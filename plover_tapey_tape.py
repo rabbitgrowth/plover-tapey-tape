@@ -1,10 +1,15 @@
 import json
-import plover
 from datetime import datetime
 from pathlib  import Path
 
+import plover
+
 class TapeyTape:
     SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
+
+    @staticmethod
+    def retroformat(translations):
+        return ''.join(plover.formatting.RetroFormatter(translations).last_fragments(0))
 
     @staticmethod
     def show_action(action):
@@ -106,8 +111,7 @@ class TapeyTape:
             if not translations:
                 output = ''
             elif self.translation_style == 'minimal':
-                formatter = plover.formatting.RetroFormatter([translations[-1]])
-                output = ''.join(formatter.last_fragments(99))
+                output = self.retroformat(translations[-1:])
             else:
                 assert self.translation_style == 'dictionary'
                 definition = translations[-1].english
