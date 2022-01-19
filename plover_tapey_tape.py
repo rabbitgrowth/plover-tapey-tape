@@ -1,3 +1,4 @@
+import itertools
 import json
 from datetime import datetime
 from pathlib  import Path
@@ -84,7 +85,8 @@ class TapeyTape:
         seconds = 0 if self.then is None else (now - self.then).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
         bar     = ('+' * width).rjust(self.bar_max_width)
-        space   = ' ' if bar else '' # so that setting width to 0 effectively hides the whole thing
+        if bar:
+            bar += ' '
         self.then = now
 
         keys = set()
@@ -98,29 +100,52 @@ class TapeyTape:
 
         star = '*' if self.old else ''
 
-        if stroke.is_correction:
-            # Just show * for undo strokes as the user probably expects
-            output = ''
-        elif self.translation_style == 'mixed':
-            output = ' '.join(filter(None, map(self.show_action, self.new)))
+        translations = self.engine.translator_state.translations
+
+        if stroke.is_correction or not translations:
+            # For undo strokes, just show * as the user probably expects
+            # (check if translation stack is empty to be safe, although
+            # I think the stack can be empty only on an undo stroke?)
+            output      = ''
+            suggestions = ''
         else:
-            translations = self.engine.translator_state.translations
-            # At this point we know that the stroke is not an undo stroke, and
-            # I can't think of a scenario where the stroke is not an undo stroke
-            # but the translation stack is empty. But just to be safe...
-            if not translations:
-                output = ''
+            # Format output
+            if self.translation_style == 'mixed':
+                output = ' '.join(filter(None, map(self.show_action, self.new)))
             elif self.translation_style == 'minimal':
                 output = self.retroformat(translations[-1:])
             else:
-                assert self.translation_style == 'dictionary'
                 definition = translations[-1].english
                 output = '/' if definition is None else definition
                 # TODO: don't show numbers as untranslate
 
-        output = output.translate(self.SHOW_WHITESPACE)
+            output = output.translate(self.SHOW_WHITESPACE)
 
-        self.file.write(f'{bar}{space}|{steno}| {star}{output}\n')
+            # Format suggestions
+            suggestions = []
+            # Don't show suggestions if the translation consists entirely of whitespace or is empty
+            if any(action.text and action.text.strip()
+                   for action in translations[-1].formatting):
+                last_text = None
+                for i in itertools.islice(reversed(range(len(translations))), 10):
+                    tail = translations[i:]
+                    text = self.retroformat(tail)
+                    if text == last_text:
+                        continue
+                    last_text = text
+                    stroke_count = sum(len(translation.rtfcre) for translation in tail)
+                    outlines = [outline
+                                for suggestion in self.engine.get_suggestions(text)
+                                for outline in suggestion.steno_list
+                                if len(outline) < stroke_count]
+                    if outlines:
+                        suggestions.append('>' * len(tail) + ' '.join(map('/'.join, outlines)))
+
+            suggestions = ' '.join(suggestions)
+            if suggestions:
+                suggestions = '  ' + suggestions
+
+        self.file.write(f'{bar}|{steno}| {star}{output}{suggestions}\n')
         self.file.flush()
 
     def on_translated(self, old, new):
