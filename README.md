@@ -82,3 +82,12 @@ the translation style to `minimal`, use
     "translation_style": "minimal"
 }
 ```
+
+## Acknowledgements
+
+The name of this plugin is a tribute to
+[Typey Type](https://didoesdigital.com/typey-type/),
+an excellent website for learning steno.
+
+This plugin is heavily inspired by
+[plover-clippy](https://github.com/tckmn/plover_clippy).
