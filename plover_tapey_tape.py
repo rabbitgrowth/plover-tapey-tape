@@ -36,9 +36,9 @@ class TapeyTape:
 
     def __init__(self, engine):
         self.engine = engine
-        self.then = None # time of the last stroke
-        self.old  = None # actions undone
-        self.new  = None # actions executed
+        self.last_stroke_time = None
+        self.old_actions = None
+        self.new_actions = None
 
     def start(self):
         config_dir = Path(plover.oslayer.config.CONFIG_DIR)
@@ -82,12 +82,12 @@ class TapeyTape:
             self.file.write(f'{stroke}\n')
 
         now     = datetime.now()
-        seconds = 0 if self.then is None else (now - self.then).total_seconds()
+        seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
         bar     = ('+' * width).rjust(self.bar_max_width)
         if bar:
             bar += ' '
-        self.then = now
+        self.last_stroke_time = now
 
         keys = set()
         for key in stroke.steno_keys:
@@ -98,7 +98,7 @@ class TapeyTape:
                 keys.add(key)                      #   add S-
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
 
-        star = '*' if self.old else ''
+        star = '*' if self.old_actions else ''
 
         translations = self.engine.translator_state.translations
 
@@ -111,7 +111,7 @@ class TapeyTape:
         else:
             # Format output
             if self.translation_style == 'mixed':
-                output = ' '.join(filter(None, map(self.show_action, self.new)))
+                output = ' '.join(filter(None, map(self.show_action, self.new_actions)))
             elif self.translation_style == 'minimal':
                 output = self.retroformat(translations[-1:])
             else:
@@ -148,12 +148,12 @@ class TapeyTape:
         self.file.write(f'{bar}|{steno}| {star}{output}{suggestions}\n')
         self.file.flush()
 
-    def on_translated(self, old, new):
+    def on_translated(self, old_actions, new_actions):
         if self.debug_mode:
             self.file.write('\n')
-            for prefix, actions in (('Old', old), ('New', new)):
+            for prefix, actions in (('-', old_actions), ('+', new_actions)):
                 for action in actions:
                     self.file.write(f'{prefix}{action}\n')
 
-        self.old = old
-        self.new = new
+        self.old_actions = old_actions
+        self.new_actions = new_actions
