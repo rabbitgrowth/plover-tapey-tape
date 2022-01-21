@@ -138,7 +138,8 @@ class TapeyTape:
         self.file.write(f'|{steno}| ')
 
         # Star
-        self.file.write('*' if self.old_actions else '')
+        if self.old_actions:
+            self.file.write('*')
 
         # If the stroke is an undo stroke, don't write anything more
         if stroke.is_correction or not translations:
