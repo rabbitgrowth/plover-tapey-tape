@@ -34,11 +34,30 @@ class TapeyTape:
             result += '^'
         return result
 
+    @staticmethod
+    def is_fingerspelling(translation):
+        # For simplicity, just equate glue with fingerspelling for now
+        return any(action.glue for action in translation.formatting)
+
+    @staticmethod
+    def is_whitespace(translation):
+        return all(not action.text or action.text.isspace() for action in translation.formatting)
+
     def __init__(self, engine):
         self.engine = engine
-        self.last_stroke_time = None
-        self.old_actions = None
-        self.new_actions = None
+
+        self.last_stroke_time   = None
+        self.old_actions        = None
+        self.new_actions        = None
+        self.was_fingerspelling = False
+
+    def get_suggestions(self, translations):
+        text = self.retroformat(translations)
+        stroke_count = sum(len(translation.rtfcre) for translation in translations)
+        return [outline
+                for suggestion in self.engine.get_suggestions(text)
+                for outline in suggestion.steno_list
+                if len(outline) < stroke_count]
 
     def start(self):
         config_dir = Path(plover.oslayer.config.CONFIG_DIR)
@@ -81,14 +100,33 @@ class TapeyTape:
         if self.debug_mode:
             self.file.write(f'{stroke}\n')
 
+        # Translation stack
+        translations = self.engine.translator_state.translations
+
+        # Add back what was delayed
+        if self.was_fingerspelling:
+            # Maybe show suggestions
+            if not stroke.is_correction and translations and not self.is_fingerspelling(translations[-1]):
+                tail = list(reversed(list(itertools.takewhile(self.is_fingerspelling, reversed(translations[:-1])))))
+                outlines = self.get_suggestions(tail)
+                if outlines:
+                    self.file.write('  >')
+                self.file.write(' '.join(map('/'.join, outlines)))
+
+            # Always add newline
+            self.file.write('\n')
+
+        # Bar
         now     = datetime.now()
         seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
         bar     = ('+' * width).rjust(self.bar_max_width)
         if bar:
-            bar += ' '
+            self.file.write(bar)
+            self.file.write(' ')
         self.last_stroke_time = now
 
+        # Steno
         keys = set()
         for key in stroke.steno_keys:
             if key in self.numbers:                # e.g., if key is 1-
@@ -97,55 +135,51 @@ class TapeyTape:
             else:                                  # if key is S-
                 keys.add(key)                      #   add S-
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
+        self.file.write(f'|{steno}| ')
 
-        star = '*' if self.old_actions else ''
+        # Star
+        self.file.write('*' if self.old_actions else '')
 
-        translations = self.engine.translator_state.translations
-
+        # If the stroke is an undo stroke, don't write anything more
         if stroke.is_correction or not translations:
-            # For undo strokes, just show * as the user probably expects
-            # (check if translation stack is empty to be safe, although
-            # I think the stack can be empty only on an undo stroke?)
-            output      = ''
-            suggestions = ''
+            self.file.write('\n')
+            self.file.flush()
+            self.was_fingerspelling = False
+            return
+
+        # We can now rest assured that the translation stack is non-empty
+        self.was_fingerspelling = self.is_fingerspelling(translations[-1])
+
+        # Output
+        if self.translation_style == 'mixed':
+            output = ' '.join(filter(None, map(self.show_action, self.new_actions)))
+        elif self.translation_style == 'minimal':
+            output = self.retroformat(translations[-1:])
         else:
-            # Format output
-            if self.translation_style == 'mixed':
-                output = ' '.join(filter(None, map(self.show_action, self.new_actions)))
-            elif self.translation_style == 'minimal':
-                output = self.retroformat(translations[-1:])
-            else:
-                definition = translations[-1].english
-                output = '/' if definition is None else definition
-                # TODO: don't show numbers as untranslate
+            definition = translations[-1].english
+            output = '/' if definition is None else definition
+            # TODO: don't show numbers as untranslate
 
-            output = output.translate(self.SHOW_WHITESPACE)
+        self.file.write(output.translate(self.SHOW_WHITESPACE))
 
-            # Format suggestions
+        # Suggestions
+        if not self.was_fingerspelling:
             suggestions = []
-            # Don't show suggestions if the translation consists entirely of whitespace or is empty
-            if any(action.text and action.text.strip()
-                   for action in translations[-1].formatting):
-                last_text = None
-                for i in itertools.islice(reversed(range(len(translations))), 10):
-                    tail = translations[i:]
-                    text = self.retroformat(tail)
-                    if text == last_text:
-                        continue
-                    last_text = text
-                    stroke_count = sum(len(translation.rtfcre) for translation in tail)
-                    outlines = [outline
-                                for suggestion in self.engine.get_suggestions(text)
-                                for outline in suggestion.steno_list
-                                if len(outline) < stroke_count]
-                    if outlines:
-                        suggestions.append('>' * len(tail) + ' '.join(map('/'.join, outlines)))
-
-            suggestions = ' '.join(suggestions)
+            for i in itertools.islice(reversed(range(len(translations))), 10):
+                tail = translations[i:]
+                # TODO: also show suggestion for, e.g., using KPA inefficiently
+                if (self.is_whitespace(tail[-1])
+                        or self.is_whitespace(tail[0])
+                        or self.is_fingerspelling(tail[0])):
+                    break
+                outlines = self.get_suggestions(tail)
+                if outlines:
+                    suggestions.append('>' * len(tail) + ' '.join(map('/'.join, outlines)))
             if suggestions:
-                suggestions = '  ' + suggestions
+                self.file.write('  ')
+            self.file.write(' '.join(suggestions))
+            self.file.write('\n')
 
-        self.file.write(f'{bar}|{steno}| {star}{output}{suggestions}\n')
         self.file.flush()
 
     def on_translated(self, old_actions, new_actions):
