@@ -105,8 +105,50 @@ class TapeyTape:
 
         # Add back what was delayed
         if self.was_fingerspelling:
-            # Maybe show suggestions
-            if not stroke.is_correction and translations and not self.is_fingerspelling(translations[-1]):
+            # Maybe show suggestions. Some important cases to consider:
+            #
+            # word &f &o &o word
+            #   Stack: word
+            #          word &f
+            #          word &f &o
+            #          word &f &o &o       (last)
+            #          word &f &o &o word  (current)
+            #   This is the most typical case. The last last-translation was fingerspelling,
+            #   and the current last-translation is not, representing a turning point.
+            #   Show suggestions for "foo" after the last &o.
+            #
+            # word &f &o &o word &b *
+            #   Stack: word
+            #          word &f
+            #          word &f &o
+            #          word &f &o &o
+            #          word &f &o &o word
+            #          word &f &o &o word &b
+            #          word &f &o &o word
+            #   Here it's also the case that the last last-translation was fingerspelling,
+            #   and the current last-translation is not, representing a "turning point" --
+            #   but not in the direction we want. If we don't handle these undo strokes
+            #   specially, suggestions for "foo" would be shown after &b.
+            #
+            # Now, assume the user defines PW*/A*/R* as "BAR" in their dictionary.
+            # Not sure why anyone would want to do something like that, but it's possible.
+            #
+            # word &f &o &o &b &a &r
+            #   Stack: word
+            #          word &f
+            #          word &f &o
+            #          word &f &o &o
+            #          word &f &o &o &b
+            #          word &f &o &o &b &a
+            #          word &f &o &o BAR
+            #   Again, this represents a "turning point" where we shouldn't show suggestions.
+            #   If we don't handle this case specially, suggestions for "foo" would be shown
+            #   after &a. We can identify this case by looking at whether anything got replaced
+            #   in the current last-translation.
+            if (translations
+                    and not self.is_fingerspelling(translations[-1])
+                    and not stroke.is_correction
+                    and not translations[-1].replaced):
                 tail = list(reversed(list(itertools.takewhile(self.is_fingerspelling, reversed(translations[:-1])))))
                 outlines = self.get_suggestions(tail)
                 if outlines:
