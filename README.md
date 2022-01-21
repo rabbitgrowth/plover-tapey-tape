@@ -83,6 +83,36 @@ the translation style to `minimal`, use
 }
 ```
 
+## Future plans
+
+This plugin is under active development. The current priority is to
+incorporate [clippy](https://github.com/tckmn/plover_clippy)-like
+suggestions into the paper tape. (This is mostly motivated by a
+personal desire to have all the information I need in a single window
+when practicing.)
+
+```
+|   KP   A              | {}{-|}
+|      H    E           | he
+|             F      S  | was  >>EFS HEFS
+|   K      *            | {>}{&k}
+| S     R  *            | {>}{&v}
+|          *E           | {>}{&e}
+|  T       *            | {>}{&t}
+|   K   R  *            | {>}{&c}
+|      H   *            | {>}{&h}  >KW*EFP
+|                  G    | {^ing}
+|    PW                 | about
+|                   T   | the  >>PW-T
+|    P  RAO EU       S  | price
+|  T P          P L     | {.}
+```
+
+In particular, I’m trying to make it treat fingerspelling as a special
+case and only show suggestions for complete fingerspelled words
+(for instance, `kvetch`, not sub-words like `vet`, `vetch`, `et`,
+`etc`, `etch`, `etching`, `chin`, and `ching`).
+
 ## Acknowledgements
 
 The name of this plugin is a tribute to
