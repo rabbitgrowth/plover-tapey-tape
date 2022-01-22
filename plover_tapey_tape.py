@@ -94,6 +94,12 @@ class TapeyTape:
         self.file = config_dir.joinpath('tapey_tape.txt').open('a')
 
     def stop(self):
+        if self.was_fingerspelling:
+            if self.stored_suggestions:
+                self.file.write('  ')
+                self.file.write(self.stored_suggestions)
+            self.file.write('\n')
+
         self.engine.hook_disconnect('stroked',    self.on_stroked)
         self.engine.hook_disconnect('translated', self.on_translated)
         self.file.close()
