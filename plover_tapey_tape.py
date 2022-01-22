@@ -233,8 +233,9 @@ class TapeyTape:
         if self.was_fingerspelling:
             self.stored_suggestions = suggestions
         else:
-            self.file.write('  ')
-            self.file.write(suggestions)
+            if suggestions:
+                self.file.write('  ')
+                self.file.write(suggestions)
             self.file.write('\n')
 
         self.file.flush()
