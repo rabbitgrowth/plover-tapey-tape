@@ -1,3 +1,4 @@
+import collections
 import itertools
 import json
 from datetime import datetime
@@ -50,6 +51,7 @@ class TapeyTape:
         self.old_actions        = None
         self.new_actions        = None
         self.was_fingerspelling = False
+        self.stored_suggestions = None
 
     def get_suggestions(self, translations):
         text = self.retroformat(translations)
@@ -148,12 +150,10 @@ class TapeyTape:
             if (translations
                     and not self.is_fingerspelling(translations[-1])
                     and not stroke.is_correction
-                    and not translations[-1].replaced):
-                tail = list(reversed(list(itertools.takewhile(self.is_fingerspelling, reversed(translations[:-1])))))
-                outlines = self.get_suggestions(tail)
-                if outlines:
-                    self.file.write('  >')
-                self.file.write(' '.join(map('/'.join, outlines)))
+                    and not translations[-1].replaced
+                    and self.stored_suggestions):
+                self.file.write('  ')
+                self.file.write(self.stored_suggestions)
 
             # Always add newline
             self.file.write('\n')
@@ -206,21 +206,37 @@ class TapeyTape:
         self.file.write(output.translate(self.SHOW_WHITESPACE))
 
         # Suggestions
-        if not self.was_fingerspelling:
-            suggestions = []
-            for i in itertools.islice(reversed(range(len(translations))), 10):
-                tail = translations[i:]
-                # TODO: also show suggestion for, e.g., using KPA inefficiently
-                if (self.is_whitespace(tail[-1])
-                        or self.is_whitespace(tail[0])
-                        or self.is_fingerspelling(tail[0])):
-                    break
-                outlines = self.get_suggestions(tail)
-                if outlines:
-                    suggestions.append('>' * len(tail) + ' '.join(map('/'.join, outlines)))
-            if suggestions:
-                self.file.write('  ')
-            self.file.write(' '.join(suggestions))
+        table  = {}
+        buffer = []
+        deque  = collections.deque()
+        count  = 0
+
+        for translation in reversed(translations):
+            if self.is_fingerspelling(translation):
+                buffer.append(translation)
+            else:
+                if buffer:
+                    count += 1
+                    deque.extendleft(buffer)
+                    buffer = []
+                    table[count] = self.get_suggestions(deque)
+                count += 1
+                deque.appendleft(translation)
+                table[count] = self.get_suggestions(deque)
+        if buffer:
+            count += 1
+            deque.extendleft(buffer)
+            table[count] = self.get_suggestions(deque)
+
+        suggestions = ' '.join('>' * count + ' '.join(map('/'.join, outlines))
+                               for count, outlines in table.items()
+                               if outlines)
+
+        if self.was_fingerspelling:
+            self.stored_suggestions = suggestions
+        else:
+            self.file.write('  ')
+            self.file.write(suggestions)
             self.file.write('\n')
 
         self.file.flush()
