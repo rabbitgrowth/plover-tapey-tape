@@ -1,10 +1,17 @@
+import collections
+import itertools
 import json
-import plover
 from datetime import datetime
 from pathlib  import Path
 
+import plover
+
 class TapeyTape:
     SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
+
+    @staticmethod
+    def retroformat(translations):
+        return ''.join(plover.formatting.RetroFormatter(translations).last_fragments(0))
 
     @staticmethod
     def show_action(action):
@@ -28,11 +35,31 @@ class TapeyTape:
             result += '^'
         return result
 
+    @staticmethod
+    def is_fingerspelling(translation):
+        # For simplicity, just equate glue with fingerspelling for now
+        return any(action.glue for action in translation.formatting)
+
+    @staticmethod
+    def is_whitespace(translation):
+        return all(not action.text or action.text.isspace() for action in translation.formatting)
+
     def __init__(self, engine):
         self.engine = engine
-        self.last_stroke_time = None
-        self.old_actions = None
-        self.new_actions = None
+
+        self.last_stroke_time   = None
+        self.old_actions        = None
+        self.new_actions        = None
+        self.was_fingerspelling = False
+        self.stored_suggestions = None
+
+    def get_suggestions(self, translations):
+        text = self.retroformat(translations)
+        stroke_count = sum(len(translation.rtfcre) for translation in translations)
+        return [outline
+                for suggestion in self.engine.get_suggestions(text)
+                for outline in suggestion.steno_list
+                if len(outline) < stroke_count]
 
     def start(self):
         config_dir = Path(plover.oslayer.config.CONFIG_DIR)
@@ -75,13 +102,73 @@ class TapeyTape:
         if self.debug_mode:
             self.file.write(f'{stroke}\n')
 
+        # Translation stack
+        translations = self.engine.translator_state.translations
+
+        # Add back what was delayed
+        if self.was_fingerspelling:
+            # Maybe show suggestions. Some important cases to consider:
+            #
+            # word &f &o &o word
+            #   Stack: word
+            #          word &f
+            #          word &f &o
+            #          word &f &o &o       (last)
+            #          word &f &o &o word  (current)
+            #   This is the most typical case. The last last-translation was fingerspelling,
+            #   and the current last-translation is not, representing a turning point.
+            #   Show suggestions for "foo" after the last &o.
+            #
+            # word &f &o &o word &b *
+            #   Stack: word
+            #          word &f
+            #          word &f &o
+            #          word &f &o &o
+            #          word &f &o &o word
+            #          word &f &o &o word &b
+            #          word &f &o &o word
+            #   Here it's also the case that the last last-translation was fingerspelling,
+            #   and the current last-translation is not, representing a "turning point" --
+            #   but not in the direction we want. If we don't handle these undo strokes
+            #   specially, suggestions for "foo" would be shown after &b.
+            #
+            # Now, assume the user defines PW*/A*/R* as "BAR" in their dictionary.
+            # Not sure why anyone would want to do something like that, but it's possible.
+            #
+            # word &f &o &o &b &a &r
+            #   Stack: word
+            #          word &f
+            #          word &f &o
+            #          word &f &o &o
+            #          word &f &o &o &b
+            #          word &f &o &o &b &a
+            #          word &f &o &o BAR
+            #   Again, this represents a "turning point" where we shouldn't show suggestions.
+            #   If we don't handle this case specially, suggestions for "foo" would be shown
+            #   after &a. We can identify this case by looking at whether anything got replaced
+            #   in the current last-translation.
+            if (translations
+                    and not self.is_fingerspelling(translations[-1])
+                    and not stroke.is_correction
+                    and not translations[-1].replaced
+                    and self.stored_suggestions):
+                self.file.write('  ')
+                self.file.write(self.stored_suggestions)
+
+            # Always add newline
+            self.file.write('\n')
+
+        # Bar
         now     = datetime.now()
         seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
         bar     = ('+' * width).rjust(self.bar_max_width)
-        space   = ' ' if bar else '' # so that setting width to 0 effectively hides the whole thing
+        if bar:
+            self.file.write(bar)
+            self.file.write(' ')
         self.last_stroke_time = now
 
+        # Steno
         keys = set()
         for key in stroke.steno_keys:
             if key in self.numbers:                # e.g., if key is 1-
@@ -90,33 +177,66 @@ class TapeyTape:
             else:                                  # if key is S-
                 keys.add(key)                      #   add S-
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
+        self.file.write(f'|{steno}| ')
 
-        star = '*' if self.old_actions else ''
+        # Star
+        if self.old_actions:
+            self.file.write('*')
 
-        if stroke.is_correction:
-            # Just show * for undo strokes as the user probably expects
-            output = ''
-        elif self.translation_style == 'mixed':
+        # If the stroke is an undo stroke, don't write anything more
+        if stroke.is_correction or not translations:
+            self.file.write('\n')
+            self.file.flush()
+            self.was_fingerspelling = False
+            return
+
+        # We can now rest assured that the translation stack is non-empty
+        self.was_fingerspelling = self.is_fingerspelling(translations[-1])
+
+        # Output
+        if self.translation_style == 'mixed':
             output = ' '.join(filter(None, map(self.show_action, self.new_actions)))
+        elif self.translation_style == 'minimal':
+            output = self.retroformat(translations[-1:])
         else:
-            translations = self.engine.translator_state.translations
-            # At this point we know that the stroke is not an undo stroke, and
-            # I can't think of a scenario where the stroke is not an undo stroke
-            # but the translation stack is empty. But just to be safe...
-            if not translations:
-                output = ''
-            elif self.translation_style == 'minimal':
-                formatter = plover.formatting.RetroFormatter([translations[-1]])
-                output = ''.join(formatter.last_fragments(99))
-            else:
-                assert self.translation_style == 'dictionary'
-                definition = translations[-1].english
-                output = '/' if definition is None else definition
-                # TODO: don't show numbers as untranslate
+            definition = translations[-1].english
+            output = '/' if definition is None else definition
+            # TODO: don't show numbers as untranslate
 
-        output = output.translate(self.SHOW_WHITESPACE)
+        self.file.write(output.translate(self.SHOW_WHITESPACE))
 
-        self.file.write(f'{bar}{space}|{steno}| {star}{output}\n')
+        # Suggestions
+        suggestions = []
+
+        if not self.is_whitespace(translations[-1]):
+            buffer = []
+            deque  = collections.deque()
+            for translation in reversed(translations):
+                if self.is_fingerspelling(translation):
+                    buffer.append(translation)
+                else:
+                    if buffer:
+                        deque.extendleft(buffer)
+                        buffer = []
+                        suggestions.append(self.get_suggestions(deque))
+                    deque.appendleft(translation)
+                    if not self.is_whitespace(translation):
+                        suggestions.append(self.get_suggestions(deque))
+            if buffer:
+                deque.extendleft(buffer)
+                suggestions.append(self.get_suggestions(deque))
+
+        suggestions = ' '.join('>' * i + ' '.join(map('/'.join, outlines))
+                               for i, outlines in enumerate(suggestions, start=1)
+                               if outlines)
+
+        if self.was_fingerspelling:
+            self.stored_suggestions = suggestions
+        else:
+            self.file.write('  ')
+            self.file.write(suggestions)
+            self.file.write('\n')
+
         self.file.flush()
 
     def on_translated(self, old_actions, new_actions):
