@@ -208,10 +208,9 @@ class TapeyTape:
         # Suggestions
         suggestions = []
 
-        buffer = []
-        deque  = collections.deque()
-
         if not self.is_whitespace(translations[-1]):
+            buffer = []
+            deque  = collections.deque()
             for translation in reversed(translations):
                 if self.is_fingerspelling(translation):
                     buffer.append(translation)
