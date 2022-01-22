@@ -206,30 +206,29 @@ class TapeyTape:
         self.file.write(output.translate(self.SHOW_WHITESPACE))
 
         # Suggestions
-        table  = {}
+        suggestions = []
+
         buffer = []
         deque  = collections.deque()
-        count  = 0
 
-        for translation in reversed(translations):
-            if self.is_fingerspelling(translation):
-                buffer.append(translation)
-            else:
-                if buffer:
-                    count += 1
-                    deque.extendleft(buffer)
-                    buffer = []
-                    table[count] = self.get_suggestions(deque)
-                count += 1
-                deque.appendleft(translation)
-                table[count] = self.get_suggestions(deque)
-        if buffer:
-            count += 1
-            deque.extendleft(buffer)
-            table[count] = self.get_suggestions(deque)
+        if not self.is_whitespace(translations[-1]):
+            for translation in reversed(translations):
+                if self.is_fingerspelling(translation):
+                    buffer.append(translation)
+                else:
+                    if buffer:
+                        deque.extendleft(buffer)
+                        buffer = []
+                        suggestions.append(self.get_suggestions(deque))
+                    deque.appendleft(translation)
+                    if not self.is_whitespace(translation):
+                        suggestions.append(self.get_suggestions(deque))
+            if buffer:
+                deque.extendleft(buffer)
+                suggestions.append(self.get_suggestions(deque))
 
-        suggestions = ' '.join('>' * count + ' '.join(map('/'.join, outlines))
-                               for count, outlines in table.items()
+        suggestions = ' '.join('>' * i + ' '.join(map('/'.join, outlines))
+                               for i, outlines in enumerate(suggestions, start=1)
                                if outlines)
 
         if self.was_fingerspelling:
