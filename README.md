@@ -26,6 +26,7 @@ As you write, the paper tape is written in real time to a file named
 
 You can review the file afterwards or use a tool like `tail -f` to
 get a real-time feed.
+- Note: the flag `---disable-inotify` may be required to make the `tail` work for WSL
 
 ## Activation
 
