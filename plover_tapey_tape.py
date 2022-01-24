@@ -185,19 +185,40 @@ class TapeyTape:
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
         self.file.write(f'|{steno}| ')
 
-        # Star
-        if self.old_actions:
-            self.file.write('*')
-
-        # If the stroke is an undo stroke, don't write anything more
+        # If the stroke is an undo stroke, just output * and call it a day.
+        # (Sometimes it can be technically correct to show translations on
+        # an undo stroke. For example:
+        #   SPWOBGS +sandbox
+        #   KAEUGS  -sandbox +intoxication
+        #   *       -intoxication +sandbox
+        # "sandbox" can be thought of as "translation" of the undo stroke.
+        # But
+        #   | S  PW   O      B G S  | sandbox
+        #   |   K    A  EU     G S  | *intoxication
+        #   |          *            | *sandbox
+        # is probably not what the user expects.)
         if stroke.is_correction or not translations:
-            self.file.write('\n')
+            self.file.write('*\n')
             self.file.flush()
             self.was_fingerspelling = False
             return
 
-        # We can now rest assured that the translation stack is non-empty
+        # We can now rest assured that the translation stack is non-empty.
         self.was_fingerspelling = self.is_fingerspelling(translations[-1])
+
+        # Star
+        if len(translations[-1].strokes) > 1:
+            self.file.write('*')
+            # Here the * means something different: it doesn't mean that the
+            # stroke is an undo stroke but that the translation is corrected.
+            # (Note that Plover doesn't necessarily need to pop translations
+            # from the stack to correct a translation. For example, there is
+            # this (unnecessary) definition in main.json:
+            #   "TP-PL/SO": "{.}so",
+            # If you write TP-PL followed by SO, Plover just needs to push
+            # "so" to the stack and doesn't need to pop {.}. Or maybe it does
+            # pop {.}; it doesn't matter to us, because we can't see it from
+            # the snapshots we get on stroked events anyway.)
 
         # Output
         if self.translation_style == 'mixed':
