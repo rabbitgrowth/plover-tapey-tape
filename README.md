@@ -45,38 +45,38 @@ are:
 - `bar_max_width`: The maximum number of `+` signs shown. Set this to `0`
   to hide the bars. Defaults to `5`.
 - `output_style`:
-    - `defined`: Show translations as they are defined in your dictionary.
+    - `definition`: Show translations as they are defined in your dictionary.
       If a stroke is not defined, show `/`. This is the default.
-    - `translated`: Show translations as they are translated by Plover.
+    - `translation`: Show translations as they are translation by Plover.
       In other words, only show characters that are actually output.
 
 ```
-                          defined:  translated:
+                          definition: translation:
 
-|    P H       R        | Mr.{-|}   Mr.
-|    PW R O  U  PB      | brown     Brown
-|      H  O EU    L   DZ| /         HOEULDZ
-|          *            | *         *
-|      H  O E     L   DZ| holds     holds
-|        A  EU          | a         a
-|    P     *    P       | {&P}      P
-|      H   *            | {>}{&h}   h
-|  TK      *    P       | {&D}      D
-|  TK       E      G    | degree    degree
-|  T P H                | in        in
-|  T P H AO* U R        | {neuro^}  neuro
-| S K   RAO EU  PB   S  | science   science
-|  T P          P L     | {.}       .
+|    P H       R        | Mr.{-|}     Mr.
+|    PW R O  U  PB      | brown       Brown
+|      H  O EU    L   DZ| /           HOEULDZ
+|          *            | *           *
+|      H  O E     L   DZ| holds       holds
+|        A  EU          | a           a
+|    P     *    P       | {&P}        P
+|      H   *            | {>}{&h}     h
+|  TK      *    P       | {&D}        D
+|  TK       E      G    | degree      degree
+|  T P H                | in          in
+|  T P H AO* U R        | {neuro^}    neuro
+| S K   RAO EU  PB   S  | science     science
+|  T P          P L     | {.}         .
 ```
 
 For example, to stretch out the bars to twice the default width and set
-the translation style to `translated`, use
+the output style to `translation`, use
 
 ```json
 {
     "bar_time_unit": 0.1,
     "bar_max_width": 10,
-    "output_style": "translated"
+    "output_style": "translation"
 }
 ```
 

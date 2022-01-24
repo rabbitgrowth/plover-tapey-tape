@@ -61,8 +61,8 @@ class TapeyTape:
             self.bar_max_width = 5
 
         self.output_style = config.get('output_style')
-        if self.output_style != 'translated':
-            self.output_style = 'defined'
+        if self.output_style != 'translation':
+            self.output_style = 'definition'
 
         output_format = config.get('output_format')
         if not isinstance(output_format, str):
@@ -195,7 +195,7 @@ class TapeyTape:
             # pop {.}; it doesn't matter to us, because we can't see it from
             # the snapshots we get on stroked events anyway.)
 
-            if self.output_style == 'translated':
+            if self.output_style == 'translation':
                 formatted = self.retroformat(translations[-1:])
             else:
                 definition = translations[-1].english
