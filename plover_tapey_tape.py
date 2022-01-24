@@ -66,7 +66,7 @@ class TapeyTape:
 
         line_format = config.get('line_format')
         if not isinstance(line_format, str):
-            line_format = '%b |%s| %t  %h'
+            line_format = '%b |%s| %o  %h'
         self.left_format, *rest = re.split(r'(\s*%h)', line_format, maxsplit=1)
         self.right_format = ''.join(rest)
 
@@ -233,7 +233,7 @@ class TapeyTape:
 
         self.items = {'b': bar,
                       's': steno,
-                      't': output,      # "t" for "translation"
+                      'o': output,
                       'h': suggestions, # "h" for "hint"
                       '%': '%'}
 
