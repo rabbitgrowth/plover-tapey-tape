@@ -183,7 +183,7 @@ class TapeyTape:
             # We can now rest assured that the translation stack is non-empty.
 
             # Output
-            star = '*' if len(translations[-1].strokes) > 1 else ''
+            output = '*' if len(translations[-1].strokes) > 1 else ''
             # Here the * means something different: it doesn't mean that the
             # stroke is an undo stroke but that the translation is corrected.
             # (Note that Plover doesn't necessarily need to pop translations
@@ -196,13 +196,11 @@ class TapeyTape:
             # the snapshots we get on stroked events anyway.)
 
             if self.output_style == 'translation':
-                formatted = self.retroformat(translations[-1:])
+                output += self.retroformat(translations[-1:])
             else:
                 definition = translations[-1].english
-                formatted = '/' if definition is None else definition
+                output += '/' if definition is None else definition
                 # TODO: don't show numbers as untranslate
-
-            output = star + formatted.translate(self.SHOW_WHITESPACE)
 
             # Suggestions
             suggestions = []
