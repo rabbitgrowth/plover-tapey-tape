@@ -19,28 +19,6 @@ class TapeyTape:
         return re.sub('%(.)', lambda match: items.get(match.group(1), ''), format_string)
 
     @staticmethod
-    def show_action(action):
-        if action.combo:
-            return f'#{action.combo}'
-        if action.command:
-            return f'#{action.command}'
-        # The assumption being that an Action can't contain combo/command
-        # and text at the same time. You can define a stroke as, e.g.,
-        # {#...}..., but that will get split into two Actions.
-        if not action.text:
-            return ''
-        result = ''
-        # To reduce visual clutter, don't show & and ^ at the same time
-        if action.glue:
-            result += '&'
-        elif action.prev_attach:
-            result += '^'
-        result += action.text
-        if action.next_attach:
-            result += '^'
-        return result
-
-    @staticmethod
     def is_fingerspelling(translation):
         # For simplicity, just equate glue with fingerspelling for now
         return any(action.glue for action in translation.formatting)
@@ -53,8 +31,6 @@ class TapeyTape:
         self.engine = engine
 
         self.last_stroke_time   = None
-        self.old_actions        = None
-        self.new_actions        = None
         self.was_fingerspelling = False
 
     def get_suggestions(self, translations):
@@ -84,10 +60,9 @@ class TapeyTape:
         except (KeyError, ValueError):
             self.bar_max_width = 5
 
-        translation_style = config.get('translation_style')
-        self.translation_style = ('dictionary'
-                                  if translation_style not in ('mixed', 'minimal')
-                                  else translation_style)
+        self.translation_style = config.get('translation_style')
+        if self.translation_style != 'minimal':
+            self.translation_style = 'dictionary'
 
         output_format = config.get('output_format')
         if not isinstance(output_format, str):
@@ -98,8 +73,8 @@ class TapeyTape:
         # e.g., 1- -> S-, 2- -> T-, etc.
         self.numbers = {number: letter for letter, number in plover.system.NUMBERS.items()}
 
-        self.engine.hook_connect('stroked',    self.on_stroked)
-        self.engine.hook_connect('translated', self.on_translated)
+        self.engine.hook_connect('stroked', self.on_stroked)
+
         self.file = config_dir.joinpath('tapey_tape.txt').open('a')
 
     def stop(self):
@@ -107,8 +82,8 @@ class TapeyTape:
             self.file.write(self.expand(self.right_format, self.items).rstrip())
             self.file.write('\n')
 
-        self.engine.hook_disconnect('stroked',    self.on_stroked)
-        self.engine.hook_disconnect('translated', self.on_translated)
+        self.engine.hook_disconnect('stroked', self.on_stroked)
+
         self.file.close()
 
     def on_stroked(self, stroke):
@@ -220,9 +195,7 @@ class TapeyTape:
             # pop {.}; it doesn't matter to us, because we can't see it from
             # the snapshots we get on stroked events anyway.)
 
-            if self.translation_style == 'mixed':
-                formatted = ' '.join(filter(None, map(self.show_action, self.new_actions)))
-            elif self.translation_style == 'minimal':
+            if self.translation_style == 'minimal':
                 formatted = self.retroformat(translations[-1:])
             else:
                 definition = translations[-1].english
@@ -271,7 +244,3 @@ class TapeyTape:
             self.file.write('\n')
 
         self.file.flush()
-
-    def on_translated(self, old_actions, new_actions):
-        self.old_actions = old_actions
-        self.new_actions = new_actions
