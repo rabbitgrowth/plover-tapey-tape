@@ -64,10 +64,10 @@ class TapeyTape:
         if self.output_style != 'translation':
             self.output_style = 'definition'
 
-        output_format = config.get('output_format')
-        if not isinstance(output_format, str):
-            output_format = '%b |%s| %t  %h'
-        self.left_format, *rest = re.split(r'(\s*%h)', output_format, maxsplit=1)
+        line_format = config.get('line_format')
+        if not isinstance(line_format, str):
+            line_format = '%b |%s| %t  %h'
+        self.left_format, *rest = re.split(r'(\s*%h)', line_format, maxsplit=1)
         self.right_format = ''.join(rest)
 
         # e.g., 1- -> S-, 2- -> T-, etc.
