@@ -74,8 +74,6 @@ class TapeyTape:
         except FileNotFoundError:
             config = {}
 
-        self.debug_mode = bool(config.get('debug_mode'))
-
         try:
             # Set lower bound to some small non-zero number to avoid division by zero
             self.bar_time_unit = max(float(config['bar_time_unit']), 0.01)
@@ -114,9 +112,6 @@ class TapeyTape:
         self.file.close()
 
     def on_stroked(self, stroke):
-        if self.debug_mode:
-            self.file.write(f'{stroke}\n')
-
         # Translation stack
         translations = self.engine.translator_state.translations
 
@@ -278,11 +273,5 @@ class TapeyTape:
         self.file.flush()
 
     def on_translated(self, old_actions, new_actions):
-        if self.debug_mode:
-            self.file.write('\n')
-            for prefix, actions in (('-', old_actions), ('+', new_actions)):
-                for action in actions:
-                    self.file.write(f'{prefix}{action}\n')
-
         self.old_actions = old_actions
         self.new_actions = new_actions
