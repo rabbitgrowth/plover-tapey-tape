@@ -60,14 +60,14 @@ class TapeyTape:
         except (KeyError, ValueError):
             self.bar_max_width = 5
 
-        self.translation_style = config.get('translation_style')
-        if self.translation_style != 'minimal':
-            self.translation_style = 'dictionary'
+        self.output_style = config.get('output_style')
+        if self.output_style != 'translation':
+            self.output_style = 'definition'
 
-        output_format = config.get('output_format')
-        if not isinstance(output_format, str):
-            output_format = '%b |%s| %t  %h'
-        self.left_format, *rest = re.split(r'(\s*%h)', output_format, maxsplit=1)
+        line_format = config.get('line_format')
+        if not isinstance(line_format, str):
+            line_format = '%b |%s| %o  %h'
+        self.left_format, *rest = re.split(r'(\s*%h)', line_format, maxsplit=1)
         self.right_format = ''.join(rest)
 
         # e.g., 1- -> S-, 2- -> T-, etc.
@@ -195,7 +195,7 @@ class TapeyTape:
             # pop {.}; it doesn't matter to us, because we can't see it from
             # the snapshots we get on stroked events anyway.)
 
-            if self.translation_style == 'minimal':
+            if self.output_style == 'translation':
                 formatted = self.retroformat(translations[-1:])
             else:
                 definition = translations[-1].english
@@ -233,7 +233,7 @@ class TapeyTape:
 
         self.items = {'b': bar,
                       's': steno,
-                      't': output,      # "t" for "translation"
+                      'o': output,
                       'h': suggestions, # "h" for "hint"
                       '%': '%'}
 

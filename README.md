@@ -44,42 +44,39 @@ are:
   Defaults to `0.2`.
 - `bar_max_width`: The maximum number of `+` signs shown. Set this to `0`
   to hide the bars. Defaults to `5`.
-- `translation_style`:
-    - `minimal`: Only show characters that are actually output.
-    - `mixed`: Also show “invisible” information like attachment (`^`),
-      glue (`&`), and commands (`#`).
-    - `dictionary`: Show the definitions in your dictionary. If a stroke
-      is not defined, show `/`. This is the default.
+- `output_style`:
+    - `definition`: Show translations as they are defined in your dictionary.
+      If a stroke is not defined, show `/`. This is the default.
+    - `translation`: Show translations as they are translation by Plover.
+      In other words, only show characters that are actually output.
 
 ```
-                          minimal:  mixed:    dictionary (default):
+                          definition: translation:
 
-|    P HR O       LG    |           #TOGGLE   {PLOVER:TOGGLE}
-|    P H       R        | Mr.       Mr.       Mr.{-|}
-|    PW R O  U  PB      | Brown     Brown     brown
-|      H  O EU    L   DZ| HOEULDZ   HOEULDZ   /
-|          *            | *         *         *
-|      H  O E     L   DZ| holds     holds     holds
-|        A  EU          | a         a         a
-|    P     *    P       | P         &P        {&P}
-|      H   *            | h         &h        {>}{&h}
-|  TK      *    P       | D         &D        {&D}
-|  TK       E      G    | degree    degree    degree
-|  T P H                | in        in        in
-|  T P H AO* U R        | neuro     neuro^    {neuro^}
-| S K   RAO EU  PB   S  | science   ^science  science
-|  T P          P L     | .         ^.        {.}
-| S K W RA   U R B G S  |           ^\n\n^    {^\n\n^}{-|}
+|    P H       R        | Mr.{-|}     Mr.
+|    PW R O  U  PB      | brown       Brown
+|      H  O EU    L   DZ| /           HOEULDZ
+|          *            | *           *
+|      H  O E     L   DZ| holds       holds
+|        A  EU          | a           a
+|    P     *    P       | {&P}        P
+|      H   *            | {>}{&h}     h
+|  TK      *    P       | {&D}        D
+|  TK       E      G    | degree      degree
+|  T P H                | in          in
+|  T P H AO* U R        | {neuro^}    neuro
+| S K   RAO EU  PB   S  | science     science
+|  T P          P L     | {.}         .
 ```
 
 For example, to stretch out the bars to twice the default width and set
-the translation style to `minimal`, use
+the output style to `translation`, use
 
 ```json
 {
     "bar_time_unit": 0.1,
     "bar_max_width": 10,
-    "translation_style": "minimal"
+    "output_style": "translation"
 }
 ```
 
