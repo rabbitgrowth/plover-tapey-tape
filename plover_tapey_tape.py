@@ -16,7 +16,11 @@ class TapeyTape:
 
     @staticmethod
     def expand(format_string, items):
-        return re.sub('%(.)', lambda match: items.get(match.group(1), ''), format_string)
+        def replace(match):
+            width, letter = match.groups()
+            width = 0 if not width else int(width)
+            return items.get(letter, '').ljust(width)
+        return re.sub('%(\d*)(.)', replace, format_string)
 
     @staticmethod
     def is_fingerspelling(translation):
