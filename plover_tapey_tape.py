@@ -87,6 +87,10 @@ class TapeyTape:
         self.file.close()
 
     def on_stroked(self, stroke):
+        # Do nothing if typing in QWERTY while Plover is off
+        if not self.engine.output:
+            return
+
         # Translation stack
         translations = self.engine.translator_state.translations
 
