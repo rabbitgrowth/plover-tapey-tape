@@ -62,8 +62,8 @@ class TapeyTape:
 
         line_format = config.get('line_format')
         if not isinstance(line_format, str):
-            line_format = '%b |%s| %D  %h'
-        self.left_format, *rest = re.split(r'(\s*%h)', line_format, maxsplit=1)
+            line_format = '%b |%S| %D  %s'
+        self.left_format, *rest = re.split(r'(\s*%s)', line_format, maxsplit=1)
         self.right_format = ''.join(rest)
 
         # e.g., 1- -> S-, 2- -> T-, etc.
@@ -136,7 +136,7 @@ class TapeyTape:
                     or self.is_fingerspelling(translations[-1])
                     or stroke.is_correction
                     or translations[-1].replaced):
-                self.items['h'] = '' # suppress suggestions
+                self.items['s'] = '' # suppress suggestions
 
             self.file.write(self.expand(self.right_format, self.items).rstrip())
             self.file.write('\n')
@@ -232,11 +232,11 @@ class TapeyTape:
 
         self.items = {'d': date,
                       'b': bar,
-                      's': steno,
+                      'S': steno,
                       'r': raw_steno,
                       'D': defined,
                       'T': translated,
-                      'h': suggestions, # "h" for "hint"
+                      's': suggestions,
                       '%': '%'}
 
         self.file.write(self.expand(self.left_format, self.items))
