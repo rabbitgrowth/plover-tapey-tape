@@ -50,19 +50,25 @@ class TapeyTape:
         except FileNotFoundError:
             config = {}
 
+        # Try to be as permissive as possible with types. For example, just interpret
+        #   "bar_time_unit": "0.5"
+        # as
+        #   "bar_time_unit": 0.5
         try:
-            # Set lower bound to some small non-zero number to avoid division by zero
-            self.bar_time_unit = max(float(config['bar_time_unit']), 0.01)
-        except (KeyError, ValueError):
-            self.bar_time_unit = 0.2
-        try:
-            self.bar_max_width = min(max(int(config['bar_max_width']), 0), 100)
-        except (KeyError, ValueError):
-            self.bar_max_width = 5
+            self.bar_time_unit = float(config.get('bar_time_unit', 0.2))
+        except (TypeError, ValueError):
+            raise TypeError('bar_time_unit must be a number')
+        if self.bar_time_unit <= 0: # prevent division by zero
+            raise ValueError('bar_time_unit must be a positive number')
 
-        line_format = config.get('line_format')
+        try:
+            self.bar_max_width = int(config.get('bar_max_width', 5))
+        except (TypeError, ValueError):
+            raise TypeError('bar_max_width must be a number')
+
+        line_format = config.get('line_format', '%b |%S| %D  %s')
         if not isinstance(line_format, str):
-            line_format = '%b |%S| %D  %s'
+            raise TypeError('line_format must be a string')
         self.left_format, *rest = re.split(r'(\s*%s)', line_format, maxsplit=1)
         self.right_format = ''.join(rest)
 
