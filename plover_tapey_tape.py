@@ -163,6 +163,7 @@ class TapeyTape:
             else:                                  # if key is S-
                 keys.add(key)                      #   add S-
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
+        raw_steno = stroke.rtfcre
 
         # At this point we start to deal with things for which we need to
         # examine the translation stack: output, suggestions, and determining
@@ -237,6 +238,7 @@ class TapeyTape:
         self.items = {'d': date,
                       'b': bar,
                       's': steno,
+                      'r': raw_steno,
                       'o': output,
                       'h': suggestions, # "h" for "hint"
                       '%': '%'}
