@@ -60,13 +60,9 @@ class TapeyTape:
         except (KeyError, ValueError):
             self.bar_max_width = 5
 
-        self.output_style = config.get('output_style')
-        if self.output_style != 'translation':
-            self.output_style = 'definition'
-
         line_format = config.get('line_format')
         if not isinstance(line_format, str):
-            line_format = '%b |%s| %o  %h'
+            line_format = '%b |%s| %D  %h'
         self.left_format, *rest = re.split(r'(\s*%h)', line_format, maxsplit=1)
         self.right_format = ''.join(rest)
 
@@ -182,14 +178,15 @@ class TapeyTape:
             #   |   K    A  EU     G S  | *intoxication
             #   |          *            | *sandbox
             # is probably not what the user expects.)
-            output      = '*'
+            star        = '*'
+            defined     = ''
+            translated  = ''
             suggestions = ''
             self.was_fingerspelling = False
         else:
             # We can now rest assured that the translation stack is non-empty.
 
-            # Output
-            output = '*' if len(translations[-1].strokes) > 1 else ''
+            star = '*' if len(translations[-1].strokes) > 1 else ''
             # Here the * means something different: it doesn't mean that the
             # stroke is an undo stroke but that the translation is corrected.
             # (Note that Plover doesn't necessarily need to pop translations
@@ -201,12 +198,11 @@ class TapeyTape:
             # pop {.}; it doesn't matter to us, because we can't see it from
             # the snapshots we get on stroked events anyway.)
 
-            if self.output_style == 'translation':
-                output += self.retroformat(translations[-1:])
-            else:
-                definition = translations[-1].english
-                output += '/' if definition is None else definition
-                # TODO: don't show numbers as untranslate
+            definition = translations[-1].english
+            defined = '/' if definition is None else definition
+            # TODO: don't show numbers as untranslate
+
+            translated = self.retroformat(translations[-1:])
 
             # Suggestions
             suggestions = []
@@ -239,7 +235,9 @@ class TapeyTape:
                       'b': bar,
                       's': steno,
                       'r': raw_steno,
-                      'o': output,
+                      '*': star,
+                      'D': defined,
+                      'T': translated,
                       'h': suggestions, # "h" for "hint"
                       '%': '%'}
 
