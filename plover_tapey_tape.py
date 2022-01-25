@@ -153,7 +153,7 @@ class TapeyTape:
 
         # Bar
         now     = datetime.now()
-        date    = now.isoformat(sep=' ', timespec='milliseconds')
+        time    = now.isoformat(sep=' ', timespec='milliseconds')
         seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
         bar     = ('+' * width).rjust(self.bar_max_width)
@@ -240,7 +240,7 @@ class TapeyTape:
 
             self.was_fingerspelling = self.is_fingerspelling(translations[-1])
 
-        self.items = {'d': date,
+        self.items = {'t': time,
                       'b': bar,
                       'S': steno,
                       'r': raw_steno,
