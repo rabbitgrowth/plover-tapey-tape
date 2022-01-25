@@ -178,9 +178,8 @@ class TapeyTape:
             #   |   K    A  EU     G S  | *intoxication
             #   |          *            | *sandbox
             # is probably not what the user expects.)
-            star        = '*'
-            defined     = ''
-            translated  = ''
+            defined     = '*'
+            translated  = '*'
             suggestions = ''
             self.was_fingerspelling = False
         else:
@@ -199,10 +198,10 @@ class TapeyTape:
             # the snapshots we get on stroked events anyway.)
 
             definition = translations[-1].english
-            defined = '/' if definition is None else definition
+            defined = '/' if definition is None else star + definition
             # TODO: don't show numbers as untranslate
 
-            translated = self.retroformat(translations[-1:])
+            translated = star + self.retroformat(translations[-1:])
 
             # Suggestions
             suggestions = []
@@ -235,7 +234,6 @@ class TapeyTape:
                       'b': bar,
                       's': steno,
                       'r': raw_steno,
-                      '*': star,
                       'D': defined,
                       'T': translated,
                       'h': suggestions, # "h" for "hint"
