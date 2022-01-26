@@ -101,16 +101,16 @@ named `tapey_tape.json` in Plover’s configuration directory
   output should be formatted. Special codes beginning with `%` are
   transformed into different items:
 
-| Code | Item           | Example                   |
-|:-----|:---------------|:--------------------------|
-| `%t` | date and time  | `2020-02-02 12:34:56.789` |
-| `%b` | hesitation bar | `+++++`                   |
-| `%S` | steno          | `   K W R    U RPB      ` |
-| `%r` | raw steno      | `KWRURPB`                 |
-| `%D` | definition     | `yes{,}your Honor`        |
-| `%T` | translation    | `yes, your Honor`         |
-| `%s` | suggestions    | `>>KWRURPB`               |
-| `%%` | an actual `%`  | `%`                       |
+| Code | Item           | Example                                 |
+|:-----|:---------------|:----------------------------------------|
+| `%t` | date and time  | `2020-02-02 12:34:56.789`               |
+| `%b` | hesitation bar | `+++++`                                 |
+| `%S` | steno          | `...K.W.R....U.RPB......` (`.` = space) |
+| `%r` | raw steno      | `KWRURPB`                               |
+| `%D` | definition     | `yes{,}your Honor`                      |
+| `%T` | translation    | `yes, your Honor`                       |
+| `%s` | suggestions    | `>>KWRURPB`                             |
+| `%%` | an actual `%`  | `%`                                     |
 
 The default format is `%b |%S| %D  %s`:
 
