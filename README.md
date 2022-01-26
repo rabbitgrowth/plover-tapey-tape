@@ -108,7 +108,7 @@ named `tapey_tape.json` in Plover’s configuration directory
 | `%S` | steno          | `...K.W.R....U.RPB......` (`.` = space) |
 | `%r` | raw steno      | `KWRURPB`                               |
 | `%D` | definition     | `yes{,}your Honor`                      |
-| `%T` | translation    | `yes, your Honor`                       |
+| `%T` | translation    | `Yes, your Honor`                       |
 | `%s` | suggestions    | `>>KWRURPB`                             |
 | `%%` | an actual `%`  | `%`                                     |
 
