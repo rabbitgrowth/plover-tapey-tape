@@ -217,10 +217,14 @@ class TapeyTape:
             # the snapshots we get on stroked events anyway.)
 
             definition = translations[-1].english
-            defined = '/' if definition is None else star + definition
+            if definition is None:
+                defined = '/'
+            else:
+                defined = star + definition.translate(self.SHOW_WHITESPACE)
             # TODO: don't show numbers as untranslate
 
-            translated = star + self.retroformat(translations[-1:])
+            formatted  = self.retroformat(translations[-1:])
+            translated = star + formatted.translate(self.SHOW_WHITESPACE)
 
             # Suggestions
             suggestions = []
