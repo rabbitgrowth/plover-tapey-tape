@@ -54,7 +54,11 @@ class TapeyTape:
         except FileNotFoundError:
             config = {}
 
-        # Try to be as permissive as possible with types. For example, just interpret
+        self.bar_character = config.get('bar_character', '+')
+        if not isinstance(self.bar_character, str):
+            raise TypeError('bar_character must be a string')
+
+        # Be permissive with quoting. For example, just interpret
         #   "bar_time_unit": "0.5"
         # as
         #   "bar_time_unit": 0.5
@@ -156,7 +160,7 @@ class TapeyTape:
         time    = now.isoformat(sep=' ', timespec='milliseconds')
         seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
-        bar     = ('+' * width).rjust(self.bar_max_width)
+        bar     = (self.bar_character * width).rjust(self.bar_max_width)
 
         self.last_stroke_time = now
 
