@@ -1,6 +1,5 @@
 import collections
 import datetime
-import itertools
 import json
 import pathlib
 import re
