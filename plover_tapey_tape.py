@@ -58,6 +58,11 @@ class TapeyTape:
         if not isinstance(self.bar_character, str):
             raise TypeError('bar_character must be a string')
 
+        bar_alignment = config.get('bar_alignment', 'right')
+        if bar_alignment not in ('left', 'right'):
+            raise ValueError('bar_alignment must be either "left" or "right"')
+        self.bar_justifier = str.ljust if bar_alignment == 'left' else str.rjust
+
         # Be permissive with quoting. For example, just interpret
         #   "bar_time_unit": "0.5"
         # as
@@ -160,7 +165,7 @@ class TapeyTape:
         time    = now.isoformat(sep=' ', timespec='milliseconds')
         seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
-        bar     = (self.bar_character * width).rjust(self.bar_max_width)
+        bar     = self.bar_justifier(self.bar_character * width, self.bar_max_width)
 
         self.last_stroke_time = now
 
