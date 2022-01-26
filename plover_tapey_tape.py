@@ -1,9 +1,9 @@
 import collections
+import datetime
 import itertools
 import json
+import pathlib
 import re
-from datetime import datetime
-from pathlib  import Path
 
 import plover
 
@@ -47,7 +47,7 @@ class TapeyTape:
 
     def start(self):
         # Config
-        config_dir = Path(plover.oslayer.config.CONFIG_DIR)
+        config_dir = pathlib.Path(plover.oslayer.config.CONFIG_DIR)
         try:
             with config_dir.joinpath('tapey_tape.json').open() as f:
                 config = json.load(f)
@@ -161,7 +161,7 @@ class TapeyTape:
             self.file.write('\n')
 
         # Bar
-        now     = datetime.now()
+        now     = datetime.datetime.now()
         time    = now.isoformat(sep=' ', timespec='milliseconds')
         seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
