@@ -84,90 +84,114 @@ checking the box next to `plover-tapey-tape`.
 
 ## Configuration
 
-If you want to customize how things look, you can configure this plugin
-by creating a JSON file named `tapey_tape.json` in Plover’s
-configuration directory (see above). The available options are:
+You can customize the format of the output by creating a
+[JSON](https://www.json.org/json-en.html) configuration file
+named `tapey_tape.json` in Plover’s configuration directory
+(see above). The available options are:
 
-- `bar_time_unit`: the amount of time in seconds each `+` sign represents.
-  Defaults to `0.2`.
-- `bar_max_width`: the maximum number of `+` signs shown. Defaults to `5`.
-- `line_format`: a string specifying exactly how each line in the paper
-  tape should be formatted. `%` followed by another character has
-  special meanings: `%b` means the bar, `%s` means the steno, `%o` means
-  the output, and `%h` means suggestions (the “h” stands for “hint”).
-  (If you want an actual `%` character, use `%%`.) The default format is
-  `%b |%s| %o  %h`.
-- `output_style`:
-    - `definition`: Show what is defined in your dictionary. If a stroke
-      is not defined, show `/`. This is the default.
-    - `translation`: Show what is translated by Plover. In other words,
-      only show characters that are actually output.
+- `"bar_character"`: the character used to draw the hesitation bar.
+  Defaults to `"+"`.
+- `"bar_alignment"`: either `"left"` or `"right"` indicating whether the
+  bar should be left-aligned or right-aligned. Defaults to `"right"`.
+- `"bar_time_unit"`: the amount of time in seconds each character
+  represents. Defaults to `0.2`.
+- `"bar_max_width"`: the maximum number of characters drawn. Defaults to
+  `5`.
+- `"line_format"`: a string template specifying how each line in the
+  output should be formatted. Special codes beginning with `%` are
+  transformed into different items:
+
+| Code | Item           | Example                   |
+|:-----|:---------------|:--------------------------|
+| `%t` | date and time  | `2020-02-02 12:34:56.789` |
+| `%b` | hesitation bar | `+++++`                   |
+| `%S` | steno          | `   K W R    U RPB      ` |
+| `%r` | raw steno      | `KWRURPB`                 |
+| `%D` | definition     | `yes{,}your Honor`        |
+| `%T` | translation    | `yes, your Honor`         |
+| `%s` | suggestions    | `>>KWRURPB`               |
+| `%%` | an actual `%`  | `%`                       |
+
+The default format is `%b |%S| %D  %s`:
 
 ```
-                          definition  translation:
-                          (default):
+    %b |          %S           | %D      %s
 
-|    P H       R        | Mr.{-|}     Mr.
-|    PW R O  U  PB      | brown       Brown
-|      H  O EU    L   DZ| /           HOEULDZ
-|          *            | *           *
-|      H  O E     L   DZ| holds       holds
-|        A  EU          | a           a
-|    P     *    P       | {&P}        P
-|      H   *            | {>}{&h}     h
-|  TK      *    P       | {&D}        D
-|  TK       E      G    | degree      degree
-|  T P H                | in          in
-|  T P H AO* U R        | {neuro^}    neuro
-| S K   RAO EU  PB   S  | science     science
-|  T P          P L     | {.}         .
+  ++++ | ST        E   PB      | sten
+    ++ | S K W R O             | *steno  >STOEUPB STO*EUPB
 ```
 
-You need to follow the usual
-[JSON rules](https://www.json.org/json-en.html)
-like wrapping strings in double quotes. For example, to stretch out
-the bars to twice the default width and set the output style to
-`translation`, use
+Here’s a comparison between `%D` and `%T`:
+
+```
+                          %D        %T
+
+|    P H       R        | Mr.{-|}   Mr.
+|    PW R O  U  PB      | brown     Brown
+|      H  O EU    L   DZ| /         HOEULDZ
+|          *            | *         *
+|      H  O E     L   DZ| holds     holds
+|        A  EU          | a         a
+|    P     *    P       | {&P}      P
+|      H   *            | {>}{&h}   h
+|  TK      *    P       | {&D}      D
+|  TK       E      G    | degree    degree
+|  T P H                | in        in
+|  T P H AO* U R        | {neuro^}  neuro
+| S K   RAO EU  PB   S  | science   science
+|  T P          P L     | {.}       .
+```
+
+In short, `%D` is the *definition* in your dictionary, including
+commands like `{-|}` and `{.}`. `%T` is the *translation* by Plover,
+or the actual characters that are output. (If a stroke is undefined,
+`%D` is displayed as `/`.)
+
+You can additionally specify the *minimum width* of an item by inserting
+a number between the `%` and the letter code. For example, `%10r` makes
+the raw steno at least 10 characters wide by padding it with spaces.
+This can be used to generate a tabular output:
 
 ```json
 {
+    "line_format": "%10r -> %T"
+}
+```
+
+```
+-T         -> The
+KWEUBG     -> quick
+PWROUPB    -> brown
+TPOBGS     -> fox
+SKWRUFRPZ  -> jumps
+OEFR       -> over
+-T         -> the
+HRAEZ      -> lazy
+TKOG       -> dog
+TP-PL      -> .
+```
+
+Here’s an example `tapey_tape.json` that uses fancy Unicode symbols and
+stretches the hesitation bar to twice its default width:
+
+```json
+{
+    "bar_character": "░",
     "bar_time_unit": 0.1,
     "bar_max_width": 10,
-    "output_style": "translation"
+    "line_format": "%b │%S│ %r → %T"
 }
 ```
 
 ```
-  ++++++++ | ST        E   PB      | sten
-      ++++ | S K W R O             | *steno  >STOEUPB STO*EUPB
+  ░░░░░░░░ │      H  O*E     L     │ HO*EL → Hello
+     ░░░░░ │   K W          B G    │ KW-BG → ,
+░░░░░░░░░░ │     W   O    R  L   D │ WORLD → world
+       ░░░ │  T P           B G    │ TP-BG → !
 ```
 
-To hide the bar and suggestions, use
-
-```json
-{
-    "line_format": "|%s| %o"
-}
-```
-
-```
-| ST        E   PB      | sten
-| S K W R O             | *steno
-```
-
-If you have a font that can display them, you can even use fancy
-Unicode symbols like
-
-```json
-{
-    "line_format": "│%s│ → %o"
-}
-```
-
-```
-│ ST        E   PB      │ → sten
-│ S K W R O             │ → *steno
-```
+Note that if you edit `tapey_tape.json` while Plover is running, you’ll
+have to restart Plover for the new settings to take effect.
 
 ## Acknowledgements
 

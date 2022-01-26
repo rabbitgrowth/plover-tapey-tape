@@ -16,7 +16,11 @@ class TapeyTape:
 
     @staticmethod
     def expand(format_string, items):
-        return re.sub('%(.)', lambda match: items.get(match.group(1), ''), format_string)
+        def replace(match):
+            width, letter = match.groups()
+            width = 0 if not width else int(width)
+            return items.get(letter, '').ljust(width)
+        return re.sub('%(\d*)(.)', replace, format_string)
 
     @staticmethod
     def is_fingerspelling(translation):
@@ -50,24 +54,35 @@ class TapeyTape:
         except FileNotFoundError:
             config = {}
 
-        try:
-            # Set lower bound to some small non-zero number to avoid division by zero
-            self.bar_time_unit = max(float(config['bar_time_unit']), 0.01)
-        except (KeyError, ValueError):
-            self.bar_time_unit = 0.2
-        try:
-            self.bar_max_width = min(max(int(config['bar_max_width']), 0), 100)
-        except (KeyError, ValueError):
-            self.bar_max_width = 5
+        self.bar_character = config.get('bar_character', '+')
+        if not isinstance(self.bar_character, str):
+            raise TypeError('bar_character must be a string')
 
-        self.output_style = config.get('output_style')
-        if self.output_style != 'translation':
-            self.output_style = 'definition'
+        bar_alignment = config.get('bar_alignment', 'right')
+        if bar_alignment not in ('left', 'right'):
+            raise ValueError('bar_alignment must be either "left" or "right"')
+        self.bar_justifier = str.ljust if bar_alignment == 'left' else str.rjust
 
-        line_format = config.get('line_format')
+        # Be permissive with quoting. For example, just interpret
+        #   "bar_time_unit": "0.5"
+        # as
+        #   "bar_time_unit": 0.5
+        try:
+            self.bar_time_unit = float(config.get('bar_time_unit', 0.2))
+        except (TypeError, ValueError):
+            raise TypeError('bar_time_unit must be a number')
+        if self.bar_time_unit <= 0: # prevent division by zero
+            raise ValueError('bar_time_unit must be a positive number')
+
+        try:
+            self.bar_max_width = int(config.get('bar_max_width', 5))
+        except (TypeError, ValueError):
+            raise TypeError('bar_max_width must be a number')
+
+        line_format = config.get('line_format', '%b |%S| %D  %s')
         if not isinstance(line_format, str):
-            line_format = '%b |%s| %o  %h'
-        self.left_format, *rest = re.split(r'(\s*%h)', line_format, maxsplit=1)
+            raise TypeError('line_format must be a string')
+        self.left_format, *rest = re.split(r'(\s*%s)', line_format, maxsplit=1)
         self.right_format = ''.join(rest)
 
         # e.g., 1- -> S-, 2- -> T-, etc.
@@ -140,16 +155,17 @@ class TapeyTape:
                     or self.is_fingerspelling(translations[-1])
                     or stroke.is_correction
                     or translations[-1].replaced):
-                self.items['h'] = '' # suppress suggestions
+                self.items['s'] = '' # suppress suggestions
 
             self.file.write(self.expand(self.right_format, self.items).rstrip())
             self.file.write('\n')
 
         # Bar
         now     = datetime.now()
+        time    = now.isoformat(sep=' ', timespec='milliseconds')
         seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
         width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
-        bar     = ('+' * width).rjust(self.bar_max_width)
+        bar     = self.bar_justifier(self.bar_character * width, self.bar_max_width)
 
         self.last_stroke_time = now
 
@@ -162,6 +178,7 @@ class TapeyTape:
             else:                                  # if key is S-
                 keys.add(key)                      #   add S-
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
+        raw_steno = stroke.rtfcre
 
         # At this point we start to deal with things for which we need to
         # examine the translation stack: output, suggestions, and determining
@@ -180,14 +197,14 @@ class TapeyTape:
             #   |   K    A  EU     G S  | *intoxication
             #   |          *            | *sandbox
             # is probably not what the user expects.)
-            output      = '*'
+            defined     = '*'
+            translated  = '*'
             suggestions = ''
             self.was_fingerspelling = False
         else:
             # We can now rest assured that the translation stack is non-empty.
 
-            # Output
-            output = '*' if len(translations[-1].strokes) > 1 else ''
+            star = '*' if len(translations[-1].strokes) > 1 else ''
             # Here the * means something different: it doesn't mean that the
             # stroke is an undo stroke but that the translation is corrected.
             # (Note that Plover doesn't necessarily need to pop translations
@@ -199,12 +216,11 @@ class TapeyTape:
             # pop {.}; it doesn't matter to us, because we can't see it from
             # the snapshots we get on stroked events anyway.)
 
-            if self.output_style == 'translation':
-                output += self.retroformat(translations[-1:])
-            else:
-                definition = translations[-1].english
-                output += '/' if definition is None else definition
-                # TODO: don't show numbers as untranslate
+            definition = translations[-1].english
+            defined = '/' if definition is None else star + definition
+            # TODO: don't show numbers as untranslate
+
+            translated = star + self.retroformat(translations[-1:])
 
             # Suggestions
             suggestions = []
@@ -233,10 +249,13 @@ class TapeyTape:
 
             self.was_fingerspelling = self.is_fingerspelling(translations[-1])
 
-        self.items = {'b': bar,
-                      's': steno,
-                      'o': output,
-                      'h': suggestions, # "h" for "hint"
+        self.items = {'t': time,
+                      'b': bar,
+                      'S': steno,
+                      'r': raw_steno,
+                      'D': defined,
+                      'T': translated,
+                      's': suggestions,
                       '%': '%'}
 
         self.file.write(self.expand(self.left_format, self.items))
