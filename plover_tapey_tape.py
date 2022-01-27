@@ -54,6 +54,15 @@ class TapeyTape:
 
     def start(self):
         # Config
+        options = (
+            ('bar_character', str,          lambda x: True,  'a string',          '+'             ),
+            ('bar_alignment', str,          lambda x: x in ('left', 'right'), 'either "left" or "right"', 'right'),
+            ('bar_time_unit', (float, int), lambda x: x > 0, 'a positive number', 0.2             ),
+            ('bar_max_width', int,          lambda x: True,  'an integer',        5               ),
+            ('bar_threshold', (float, int), lambda x: True,  'a number',          0.2             ),
+            ('line_format',   str,          lambda x: True,  'a string',          '%b |%S| %D  %s'),
+        )
+
         config_dir = pathlib.Path(plover.oslayer.config.CONFIG_DIR)
         try:
             with config_dir.joinpath('tapey_tape.json').open() as f:
@@ -61,40 +70,19 @@ class TapeyTape:
         except FileNotFoundError:
             config = {}
 
-        self.bar_character = config.get('bar_character', '+')
-        if not isinstance(self.bar_character, str):
-            raise TypeError('bar_character must be a string')
+        self.config = {}
+        for option, types, condition, description, default in options:
+            value = config.get(option)
+            if value is None:
+                self.config[option] = default
+                continue
+            if not isinstance(value, types):
+                raise TypeError(f'{option} must be {description}')
+            if not condition(value):
+                raise ValueError(f'{option} must be {description}')
+            self.config[option] = value
 
-        bar_alignment = config.get('bar_alignment', 'right')
-        if bar_alignment not in ('left', 'right'):
-            raise ValueError('bar_alignment must be either "left" or "right"')
-        self.bar_justifier = str.ljust if bar_alignment == 'left' else str.rjust
-
-        # Be permissive with quoting. For example, just interpret
-        #   "bar_time_unit": "0.5"
-        # as
-        #   "bar_time_unit": 0.5
-        try:
-            self.bar_time_unit = float(config.get('bar_time_unit', 0.2))
-        except (TypeError, ValueError):
-            raise TypeError('bar_time_unit must be a number')
-        if self.bar_time_unit <= 0: # prevent division by zero
-            raise ValueError('bar_time_unit must be a positive number')
-
-        try:
-            self.bar_threshold = float(config.get('bar_threshold', 0))
-        except (TypeError, ValueError):
-            raise TypeError('bar_threshold must be a number')
-
-        try:
-            self.bar_max_width = int(config.get('bar_max_width', 5))
-        except (TypeError, ValueError):
-            raise TypeError('bar_max_width must be a number')
-
-        line_format = config.get('line_format', '%b |%S| %D  %s')
-        if not isinstance(line_format, str):
-            raise TypeError('line_format must be a string')
-        self.left_format, *rest = re.split(r'(\s*%s)', line_format, maxsplit=1)
+        self.left_format, *rest = re.split(r'(\s*%s)', self.config['line_format'], maxsplit=1)
         self.right_format = ''.join(rest)
 
         # e.g., 1- -> S-, 2- -> T-, etc.
@@ -177,11 +165,12 @@ class TapeyTape:
         time = now.isoformat(sep=' ', timespec='milliseconds')
 
         if self.last_stroke_time is None:
-            bar = ' ' * self.bar_max_width
+            bar = ' ' * self.config['bar_max_width']
         else:
-            seconds = max((now - self.last_stroke_time).total_seconds() - self.bar_threshold, 0)
-            width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
-            bar     = self.bar_justifier(self.bar_character * width, self.bar_max_width)
+            seconds = max((now - self.last_stroke_time).total_seconds() - self.config['bar_threshold'], 0)
+            width   = min(int(seconds / self.config['bar_time_unit']), self.config['bar_max_width'])
+            justify = str.ljust if self.config['bar_alignment'] == 'left' else str.rjust
+            bar     = justify(self.config['bar_character'] * width, self.config['bar_max_width'])
 
         self.last_stroke_time = now
 
