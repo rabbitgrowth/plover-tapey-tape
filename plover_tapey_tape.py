@@ -6,6 +6,14 @@ import re
 
 import plover
 
+#  ,-------.
+# ( \       \    ~/steno $ tapeytape
+#  `-|  'v'  |   [ T     A  EU  P  ] tape
+#    |       |   [  K W RAO E      ] {^ey}
+#    |  _____|   [     H        PB ] {^-^}
+#    \ )      )  [ T     A  EU  P  ] tape
+#     `-------'
+
 class TapeyTape:
     SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
 
