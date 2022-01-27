@@ -82,6 +82,11 @@ class TapeyTape:
             raise ValueError('bar_time_unit must be a positive number')
 
         try:
+            self.bar_threshold = float(config.get('bar_threshold', 0))
+        except (TypeError, ValueError):
+            raise TypeError('bar_threshold must be a number')
+
+        try:
             self.bar_max_width = int(config.get('bar_max_width', 5))
         except (TypeError, ValueError):
             raise TypeError('bar_max_width must be a number')
@@ -168,11 +173,15 @@ class TapeyTape:
             self.file.write('\n')
 
         # Bar
-        now     = datetime.datetime.now()
-        time    = now.isoformat(sep=' ', timespec='milliseconds')
-        seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
-        width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
-        bar     = self.bar_justifier(self.bar_character * width, self.bar_max_width)
+        now  = datetime.datetime.now()
+        time = now.isoformat(sep=' ', timespec='milliseconds')
+
+        if self.last_stroke_time is None:
+            bar = ' ' * self.bar_max_width
+        else:
+            seconds = max((now - self.last_stroke_time).total_seconds() - self.bar_threshold, 0)
+            width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
+            bar     = self.bar_justifier(self.bar_character * width, self.bar_max_width)
 
         self.last_stroke_time = now
 
