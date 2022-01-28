@@ -96,9 +96,9 @@ named `tapey_tape.json` in Plover’s configuration directory
 - `"bar_time_unit"`: the number of seconds each character represents.
   Defaults to `0.2`.
 - `"bar_threshold"`: a constant number of seconds to subtract from the
-  stroke time. (In other words, how long to wait before the hesitation
-  clock starts ticking.) This can be used to hide the bar for strokes
-  with acceptable times so that problematic strokes stand out more
+  hesitation time of each stroke. (In other words, how long to wait
+  before the clock starts ticking.) This can be used to hide the bars
+  for fast strokes so that the bars for the slow strokes stand out more
   visually. Defaults to `0`.
 - `"bar_alignment"`: either `"left"` or `"right"` indicating whether the
   bar should be left-aligned or right-aligned. Defaults to `"right"`.
