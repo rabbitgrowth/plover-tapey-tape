@@ -55,7 +55,7 @@ class TapeyTape:
     def start(self):
         # Config
         options = (
-            ('bar_character', str, lambda x: True, 'a string', '+'),
+            ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
             ('bar_max_width', int, lambda x: True, 'an integer', 5),
             ('bar_time_unit', (float, int), lambda x: x > 0, 'a positive number', 0.2),
             ('bar_threshold', (float, int), lambda x: True, 'a number', 0),
