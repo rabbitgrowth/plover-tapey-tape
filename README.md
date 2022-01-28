@@ -182,8 +182,8 @@ stretches the hesitation bar to twice its default width:
 ```json
 {
     "bar_character": "░",
-    "bar_time_unit": 0.1,
     "bar_max_width": 10,
+    "bar_time_unit": 0.1,
     "line_format": "%b │%S│ %r → %T"
 }
 ```
