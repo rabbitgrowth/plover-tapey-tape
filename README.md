@@ -91,17 +91,17 @@ named `tapey_tape.json` in Plover’s configuration directory
 
 - `"bar_character"`: the character used to draw the hesitation bar.
   Defaults to `"+"`.
-- `"bar_alignment"`: either `"left"` or `"right"` indicating whether the
-  bar should be left-aligned or right-aligned. Defaults to `"right"`.
+- `"bar_max_width"`: the maximum number of characters drawn.
+  Defaults to `5`.
 - `"bar_time_unit"`: the number of seconds each character represents.
   Defaults to `0.2`.
-- `"bar_max_width"`: the maximum number of characters drawn. Defaults to
-  `5`.
 - `"bar_threshold"`: a constant number of seconds to subtract from the
   stroke time. (In other words, how long to wait before the hesitation
   clock starts ticking.) This can be used to hide the bar for strokes
   with acceptable times so that problematic strokes stand out more
   visually. Defaults to `0`.
+- `"bar_alignment"`: either `"left"` or `"right"` indicating whether the
+  bar should be left-aligned or right-aligned. Defaults to `"right"`.
 - `"line_format"`: a string template specifying how each line in the
   output should be formatted. Special codes beginning with `%` are
   transformed into different items:

@@ -56,10 +56,10 @@ class TapeyTape:
         # Config
         options = (
             ('bar_character', str,          lambda x: True,  'a string',          '+'             ),
-            ('bar_alignment', str,          lambda x: x in ('left', 'right'), 'either "left" or "right"', 'right'),
-            ('bar_time_unit', (float, int), lambda x: x > 0, 'a positive number', 0.2             ),
             ('bar_max_width', int,          lambda x: True,  'an integer',        5               ),
+            ('bar_time_unit', (float, int), lambda x: x > 0, 'a positive number', 0.2             ),
             ('bar_threshold', (float, int), lambda x: True,  'a number',          0               ),
+            ('bar_alignment', str,          lambda x: x in ('left', 'right'), 'either "left" or "right"', 'right'),
             ('line_format',   str,          lambda x: True,  'a string',          '%b |%S| %D  %s'),
         )
 
