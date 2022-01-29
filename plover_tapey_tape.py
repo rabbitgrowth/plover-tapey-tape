@@ -1,10 +1,18 @@
 import collections
-import itertools
+import datetime
 import json
-from datetime import datetime
-from pathlib  import Path
+import pathlib
+import re
 
 import plover
+
+#  ,-------.
+# ( \       \    ~/steno $ tapeytape
+#  `-|  'v'  |   [ T     A  EU  P  ] tape
+#    |       |   [  K W RAO E      ] {^ey}
+#    |  _____|   [     H        PB ] {^-^}
+#    \ )      )  [ T     A  EU  P  ] tape
+#     `-------'
 
 class TapeyTape:
     SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
@@ -14,26 +22,12 @@ class TapeyTape:
         return ''.join(plover.formatting.RetroFormatter(translations).last_fragments(0))
 
     @staticmethod
-    def show_action(action):
-        if action.combo:
-            return f'#{action.combo}'
-        if action.command:
-            return f'#{action.command}'
-        # The assumption being that an Action can't contain combo/command
-        # and text at the same time. You can define a stroke as, e.g.,
-        # {#...}..., but that will get split into two Actions.
-        if not action.text:
-            return ''
-        result = ''
-        # To reduce visual clutter, don't show & and ^ at the same time
-        if action.glue:
-            result += '&'
-        elif action.prev_attach:
-            result += '^'
-        result += action.text
-        if action.next_attach:
-            result += '^'
-        return result
+    def expand(format_string, items):
+        def replace(match):
+            width, letter = match.groups()
+            width = 0 if not width else int(width)
+            return items.get(letter, '').ljust(width)
+        return re.sub('%(\d*)(.)', replace, format_string)
 
     @staticmethod
     def is_fingerspelling(translation):
@@ -48,10 +42,7 @@ class TapeyTape:
         self.engine = engine
 
         self.last_stroke_time   = None
-        self.old_actions        = None
-        self.new_actions        = None
         self.was_fingerspelling = False
-        self.stored_suggestions = None
 
     def get_suggestions(self, translations):
         text = self.retroformat(translations)
@@ -62,52 +53,65 @@ class TapeyTape:
                 if len(outline) < stroke_count]
 
     def start(self):
-        config_dir = Path(plover.oslayer.config.CONFIG_DIR)
+        # Config
+        options = (
+            ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
+            ('bar_max_width', int, lambda x: True, 'an integer', 5),
+            ('bar_time_unit', (float, int), lambda x: x > 0, 'a positive number', 0.2),
+            ('bar_threshold', (float, int), lambda x: True, 'a number', 0),
+            ('bar_alignment', str, lambda x: x in ('left', 'right'), 'either "left" or "right"', 'right'),
+            ('line_format',   str, lambda x: True, 'a string', '%b |%S| %D  %s'),
+        )
+
+        config_dir = pathlib.Path(plover.oslayer.config.CONFIG_DIR)
         try:
             with config_dir.joinpath('tapey_tape.json').open() as f:
                 config = json.load(f)
         except FileNotFoundError:
             config = {}
 
-        self.debug_mode = bool(config.get('debug_mode'))
+        self.config = {}
+        for option, types, condition, description, default in options:
+            value = config.get(option)
+            if value is None:
+                self.config[option] = default
+                continue
+            if not isinstance(value, types):
+                raise TypeError(f'{option} must be {description}')
+            if not condition(value):
+                raise ValueError(f'{option} must be {description}')
+            self.config[option] = value
 
-        try:
-            # Set lower bound to some small non-zero number to avoid division by zero
-            self.bar_time_unit = max(float(config['bar_time_unit']), 0.01)
-        except (KeyError, ValueError):
-            self.bar_time_unit = 0.2
-        try:
-            self.bar_max_width = min(max(int(config['bar_max_width']), 0), 100)
-        except (KeyError, ValueError):
-            self.bar_max_width = 5
-
-        translation_style = config.get('translation_style')
-        self.translation_style = ('dictionary'
-                                  if translation_style not in ('mixed', 'minimal')
-                                  else translation_style)
+        self.left_format, *rest = re.split(r'(\s*%s)', self.config['line_format'], maxsplit=1)
+        self.right_format = ''.join(rest)
 
         # e.g., 1- -> S-, 2- -> T-, etc.
         self.numbers = {number: letter for letter, number in plover.system.NUMBERS.items()}
 
-        self.engine.hook_connect('stroked',    self.on_stroked)
-        self.engine.hook_connect('translated', self.on_translated)
+        self.engine.hook_connect('stroked', self.on_stroked)
+
         self.file = config_dir.joinpath('tapey_tape.txt').open('a')
 
     def stop(self):
-        self.engine.hook_disconnect('stroked',    self.on_stroked)
-        self.engine.hook_disconnect('translated', self.on_translated)
+        if self.was_fingerspelling:
+            self.file.write(self.expand(self.right_format, self.items).rstrip())
+            self.file.write('\n')
+
+        self.engine.hook_disconnect('stroked', self.on_stroked)
+
         self.file.close()
 
     def on_stroked(self, stroke):
-        if self.debug_mode:
-            self.file.write(f'{stroke}\n')
+        # Do nothing if typing in QWERTY while Plover is off
+        if not self.engine.output:
+            return
 
         # Translation stack
         translations = self.engine.translator_state.translations
 
         # Add back what was delayed
         if self.was_fingerspelling:
-            # Maybe show suggestions. Some important cases to consider:
+            # Some important cases to consider in deciding whether to show suggestions:
             #
             # word &f &o &o word
             #   Stack: word
@@ -147,25 +151,27 @@ class TapeyTape:
             #   If we don't handle this case specially, suggestions for "foo" would be shown
             #   after &a. We can identify this case by looking at whether anything got replaced
             #   in the current last-translation.
-            if (translations
-                    and not self.is_fingerspelling(translations[-1])
-                    and not stroke.is_correction
-                    and not translations[-1].replaced
-                    and self.stored_suggestions):
-                self.file.write('  ')
-                self.file.write(self.stored_suggestions)
+            if (not translations
+                    or self.is_fingerspelling(translations[-1])
+                    or stroke.is_correction
+                    or translations[-1].replaced):
+                self.items['s'] = '' # suppress suggestions
 
-            # Always add newline
+            self.file.write(self.expand(self.right_format, self.items).rstrip())
             self.file.write('\n')
 
         # Bar
-        now     = datetime.now()
-        seconds = 0 if self.last_stroke_time is None else (now - self.last_stroke_time).total_seconds()
-        width   = min(int(seconds / self.bar_time_unit), self.bar_max_width)
-        bar     = ('+' * width).rjust(self.bar_max_width)
-        if bar:
-            self.file.write(bar)
-            self.file.write(' ')
+        now  = datetime.datetime.now()
+        time = now.isoformat(sep=' ', timespec='milliseconds')
+
+        if self.last_stroke_time is None:
+            bar = ' ' * self.config['bar_max_width']
+        else:
+            seconds = max((now - self.last_stroke_time).total_seconds() - self.config['bar_threshold'], 0)
+            width   = min(int(seconds / self.config['bar_time_unit']), self.config['bar_max_width'])
+            justify = str.ljust if self.config['bar_alignment'] == 'left' else str.rjust
+            bar     = justify(self.config['bar_character'] * width, self.config['bar_max_width'])
+
         self.last_stroke_time = now
 
         # Steno
@@ -177,74 +183,94 @@ class TapeyTape:
             else:                                  # if key is S-
                 keys.add(key)                      #   add S-
         steno = ''.join(key.strip('-') if key in keys else ' ' for key in plover.system.KEYS)
-        self.file.write(f'|{steno}| ')
+        raw_steno = stroke.rtfcre
 
-        # Star
-        if self.old_actions:
-            self.file.write('*')
+        # At this point we start to deal with things for which we need to
+        # examine the translation stack: output, suggestions, and determining
+        # whether the current stroke is a fingerspelling stroke.
 
-        # If the stroke is an undo stroke, don't write anything more
         if stroke.is_correction or not translations:
-            self.file.write('\n')
-            self.file.flush()
+            # If the stroke is an undo stroke, just output * and call it a day.
+            # (Sometimes it can be technically correct to show translations on
+            # an undo stroke. For example:
+            #   SPWOBGS +sandbox
+            #   KAEUGS  -sandbox +intoxication
+            #   *       -intoxication +sandbox
+            # "sandbox" can be thought of as "translation" of the undo stroke.
+            # But
+            #   | S  PW   O      B G S  | sandbox
+            #   |   K    A  EU     G S  | *intoxication
+            #   |          *            | *sandbox
+            # is probably not what the user expects.)
+            defined     = '*'
+            translated  = '*'
+            suggestions = ''
             self.was_fingerspelling = False
-            return
-
-        # We can now rest assured that the translation stack is non-empty
-        self.was_fingerspelling = self.is_fingerspelling(translations[-1])
-
-        # Output
-        if self.translation_style == 'mixed':
-            output = ' '.join(filter(None, map(self.show_action, self.new_actions)))
-        elif self.translation_style == 'minimal':
-            output = self.retroformat(translations[-1:])
         else:
+            # We can now rest assured that the translation stack is non-empty.
+
+            star = '*' if len(translations[-1].strokes) > 1 else ''
+            # Here the * means something different: it doesn't mean that the
+            # stroke is an undo stroke but that the translation is corrected.
+            # (Note that Plover doesn't necessarily need to pop translations
+            # from the stack to correct a translation. For example, there is
+            # this (unnecessary) definition in main.json:
+            #   "TP-PL/SO": "{.}so",
+            # If you write TP-PL followed by SO, Plover just needs to push
+            # "so" to the stack and doesn't need to pop {.}. Or maybe it does
+            # pop {.}; it doesn't matter to us, because we can't see it from
+            # the snapshots we get on stroked events anyway.)
+
             definition = translations[-1].english
-            output = '/' if definition is None else definition
+            if definition is None:
+                defined = '/'
+            else:
+                defined = star + definition.translate(self.SHOW_WHITESPACE)
             # TODO: don't show numbers as untranslate
 
-        self.file.write(output.translate(self.SHOW_WHITESPACE))
+            formatted  = self.retroformat(translations[-1:])
+            translated = star + formatted.translate(self.SHOW_WHITESPACE)
 
-        # Suggestions
-        suggestions = []
+            # Suggestions
+            suggestions = []
 
-        if not self.is_whitespace(translations[-1]):
-            buffer = []
-            deque  = collections.deque()
-            for translation in reversed(translations):
-                if self.is_fingerspelling(translation):
-                    buffer.append(translation)
-                else:
-                    if buffer:
-                        deque.extendleft(buffer)
-                        buffer = []
-                        suggestions.append(self.get_suggestions(deque))
-                    deque.appendleft(translation)
-                    if not self.is_whitespace(translation):
-                        suggestions.append(self.get_suggestions(deque))
-            if buffer:
-                deque.extendleft(buffer)
-                suggestions.append(self.get_suggestions(deque))
+            if not self.is_whitespace(translations[-1]):
+                buffer = []
+                deque  = collections.deque()
+                for translation in reversed(translations):
+                    if self.is_fingerspelling(translation):
+                        buffer.append(translation)
+                    else:
+                        if buffer:
+                            deque.extendleft(buffer)
+                            buffer = []
+                            suggestions.append(self.get_suggestions(deque))
+                        deque.appendleft(translation)
+                        if not self.is_whitespace(translation):
+                            suggestions.append(self.get_suggestions(deque))
+                if buffer:
+                    deque.extendleft(buffer)
+                    suggestions.append(self.get_suggestions(deque))
 
-        suggestions = ' '.join('>' * i + ' '.join(map('/'.join, outlines))
-                               for i, outlines in enumerate(suggestions, start=1)
-                               if outlines)
+            suggestions = ' '.join('>' * i + ' '.join(map('/'.join, outlines))
+                                   for i, outlines in enumerate(suggestions, start=1)
+                                   if outlines)
 
-        if self.was_fingerspelling:
-            self.stored_suggestions = suggestions
-        else:
-            self.file.write('  ')
-            self.file.write(suggestions)
+            self.was_fingerspelling = self.is_fingerspelling(translations[-1])
+
+        self.items = {'t': time,
+                      'b': bar,
+                      'S': steno,
+                      'r': raw_steno,
+                      'D': defined,
+                      'T': translated,
+                      's': suggestions,
+                      '%': '%'}
+
+        self.file.write(self.expand(self.left_format, self.items))
+
+        if not self.was_fingerspelling:
+            self.file.write(self.expand(self.right_format, self.items).rstrip())
             self.file.write('\n')
 
         self.file.flush()
-
-    def on_translated(self, old_actions, new_actions):
-        if self.debug_mode:
-            self.file.write('\n')
-            for prefix, actions in (('-', old_actions), ('+', new_actions)):
-                for action in actions:
-                    self.file.write(f'{prefix}{action}\n')
-
-        self.old_actions = old_actions
-        self.new_actions = new_actions
