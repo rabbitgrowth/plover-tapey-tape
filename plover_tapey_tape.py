@@ -248,6 +248,10 @@ class TapeyTape:
                         deque.appendleft(translation)
                         if not self.is_whitespace(translation):
                             suggestions.append(self.get_suggestions(deque))
+                    # Don't try to get suggestions for very long strings.
+                    # TODO: make this customizable?
+                    if len(suggestions) >= 10:
+                        break
                 if buffer:
                     deque.extendleft(buffer)
                     suggestions.append(self.get_suggestions(deque))
