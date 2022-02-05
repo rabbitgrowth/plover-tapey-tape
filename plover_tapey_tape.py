@@ -53,12 +53,16 @@ class TapeyTape:
                 if len(outline) < stroke_count]
 
     def start(self):
-        # Config
+        # Be lenient with types in the JSON config. For example, just interpret
+        #   "bar_time_unit": "0.5"
+        # as
+        #   "bar_time_unit": 0.5
+
         options = (
             ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
             ('bar_max_width', int, lambda x: True, 'an integer', 5),
-            ('bar_time_unit', (float, int), lambda x: x > 0, 'a positive number', 0.2),
-            ('bar_threshold', (float, int), lambda x: True, 'a number', 0),
+            ('bar_time_unit', float, lambda x: x > 0, 'a positive number', 0.2),
+            ('bar_threshold', float, lambda x: True, 'a number', 0.0),
             ('bar_alignment', str, lambda x: x in ('left', 'right'), 'either "left" or "right"', 'right'),
             ('line_format',   str, lambda x: True, 'a string', '%b |%S| %D  %s'),
         )
@@ -71,16 +75,18 @@ class TapeyTape:
             config = {}
 
         self.config = {}
-        for option, types, condition, description, default in options:
+        for option, convert, check, description, default in options:
             value = config.get(option)
             if value is None:
                 self.config[option] = default
                 continue
-            if not isinstance(value, types):
+            try:
+                converted = convert(value)
+            except (TypeError, ValueError):
                 raise TypeError(f'{option} must be {description}')
-            if not condition(value):
+            if not check(converted):
                 raise ValueError(f'{option} must be {description}')
-            self.config[option] = value
+            self.config[option] = converted
 
         self.left_format, *rest = re.split(r'(\s*%s)', self.config['line_format'], maxsplit=1)
         self.right_format = ''.join(rest)
