@@ -1,8 +1,8 @@
-# plover-tapey-tape
+# Tapey Tape
 
-`plover-tapey-tape` is an alternative to Plover’s built-in paper tape.
+Tapey Tape is an alternative to Plover’s built-in paper tape.
 It provides a side-by-side view of strokes and translations as well as
-some useful extra information.
+some extra information.
 
 ```
       |   KP   A              | {}{-|}
@@ -17,8 +17,8 @@ some useful extra information.
     + |  T P          P L     | {.}
 ```
 
-The bars made up of `+`s on the left show the hesitation time for each
-stroke so that you can see which words you struggle with the most.
+The bars made up of `+`s on the left show the hesitation time for
+each stroke.
 
 The hints on the right beginning with `>` are
 [clippy](https://github.com/tckmn/plover_clippy)-style suggestions
@@ -26,8 +26,9 @@ that show opportunities to write words or phrases more efficiently.
 In the above example, it’s telling me that the two strokes I used for
 “here’s”, `HAOER/AES`, can be condensed into one, `HAO*ERS`.
 
-As you write, the paper tape is written in real time to a file named
-`tapey_tape.txt` in Plover’s configuration directory:
+Instead of displaying the paper tape in a window, Tapey Tape
+outputs it to a text file named `tapey_tape.txt` in Plover’s
+configuration directory:
 
 - Windows: `%USERPROFILE%\AppData\Local\plover`
 - macOS: `~/Library/Application Support/plover`
@@ -38,7 +39,7 @@ get a real-time feed.
 
 ## Fingerspelling
 
-`tapey-tape` tries to be clever and treats contiguous fingerspelled
+Tapey Tape tries to be clever and treats contiguous fingerspelled
 strokes as a group, so that when you
 [fingerspell “kvetch”](https://www.youtube.com/watch?v=DIfjztBuBc8)
 for example, it will only show suggestions for “kvetch”, not sub-words
@@ -84,10 +85,11 @@ checking the box next to `plover-tapey-tape`.
 
 ## Configuration
 
-You can customize the format of the output by creating a
-[JSON](https://www.json.org/json-en.html) configuration file
-named `tapey_tape.json` in Plover’s configuration directory
-(see above). The available options are:
+You can customize the behaviour of this plugin by creating a
+[JSON](https://www.json.org/json-en.html) configuration file named
+`tapey_tape.json` in Plover’s configuration directory (see above).
+(If you don’t create the file or don’t specify certain options,
+the default values will be used.) The available options are:
 
 - `"output_file"`: an absolute filepath specifying the file to
   output to. `~` is expanded to the home directory. Defaults to
@@ -179,23 +181,14 @@ TKOG       -> dog
 TP-PL      -> .
 ```
 
-Here’s an example `tapey_tape.json` that uses fancy Unicode symbols and
-stretches the hesitation bar to twice its default width:
+Here’s an example configuration that stretches the hesitation bar to
+twice its default width:
 
 ```json
 {
-    "bar_character": "░",
     "bar_max_width": 10,
-    "bar_time_unit": 0.1,
-    "line_format": "%b │%S│ %r → %T"
+    "bar_time_unit": 0.1
 }
-```
-
-```
-  ░░░░░░░░ │      H  O*E     L     │ HO*EL → Hello
-     ░░░░░ │   K W          B G    │ KW-BG → ,
-░░░░░░░░░░ │     W   O    R  L   D │ WORLD → world
-       ░░░ │  T P           B G    │ TP-BG → !
 ```
 
 Note that if you edit `tapey_tape.json` while Plover is running, you’ll
