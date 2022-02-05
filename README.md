@@ -89,6 +89,9 @@ You can customize the format of the output by creating a
 named `tapey_tape.json` in Plover’s configuration directory
 (see above). The available options are:
 
+- `"output_file"`: an absolute filepath specifying the file to
+  output to. `~` is expanded to the home directory. Defaults to
+  `tapey_tape.txt` in Plover’s configuration directory.
 - `"bar_character"`: the character used to draw the hesitation bar.
   Defaults to `"+"`.
 - `"bar_max_width"`: the maximum number of characters drawn.

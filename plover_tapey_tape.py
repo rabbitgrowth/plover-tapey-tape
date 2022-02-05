@@ -58,7 +58,10 @@ class TapeyTape:
         # as
         #   "bar_time_unit": 0.5
 
+        config_dir = pathlib.Path(plover.oslayer.config.CONFIG_DIR)
+
         options = (
+            ('output_file',   pathlib.Path, lambda x: True, 'a string', config_dir.joinpath('tapey_tape.txt')),
             ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
             ('bar_max_width', int, lambda x: True, 'an integer', 5),
             ('bar_time_unit', float, lambda x: x > 0, 'a positive number', 0.2),
@@ -67,7 +70,6 @@ class TapeyTape:
             ('line_format',   str, lambda x: True, 'a string', '%b |%S| %D  %s'),
         )
 
-        config_dir = pathlib.Path(plover.oslayer.config.CONFIG_DIR)
         try:
             with config_dir.joinpath('tapey_tape.json').open() as f:
                 config = json.load(f)
@@ -91,12 +93,15 @@ class TapeyTape:
         self.left_format, *rest = re.split(r'(\s*%s)', self.config['line_format'], maxsplit=1)
         self.right_format = ''.join(rest)
 
+        try:
+            self.file = self.config['output_file'].expanduser().open('a')
+        except OSError:
+            raise ValueError('output_file could not be opened')
+
         # e.g., 1- -> S-, 2- -> T-, etc.
         self.numbers = {number: letter for letter, number in plover.system.NUMBERS.items()}
 
         self.engine.hook_connect('stroked', self.on_stroked)
-
-        self.file = config_dir.joinpath('tapey_tape.txt').open('a')
 
     def stop(self):
         if self.was_fingerspelling:
