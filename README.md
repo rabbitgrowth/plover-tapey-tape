@@ -65,7 +65,9 @@ like “vet”, “vetch”, “et”, “etc”, and “etch”.
 ## Installation
 
 This plugin is not yet available in Plover’s plugins manager,
-but for the time being, you should be able to install it with
+but for the time being, you can install it from
+[PyPI](https://pypi.org/project/plover-tapey-tape/)
+using the command
 
 ```
 plover -s plover_plugins install plover-tapey-tape
@@ -76,6 +78,26 @@ where `plover` stands for
 - Windows: `C:\Program Files (x86)\Open Steno Project\Plover 4.0.0\plover_console.exe`
 - macOS: `/Applications/Plover.app/Contents/MacOS/Plover`
 - Linux: `plover.AppImage`
+
+(The path might be slightly different if you’re on Windows.
+ For more detailed instructions, please refer to the
+ [Manually Installing Plugins](https://github.com/openstenoproject/plover/wiki/Manually-Installing-Plugins)
+ page on the Plover Wiki.)
+
+To update:
+
+```
+plover -s plover_plugins install --upgrade plover-tapey-tape
+```
+
+Alternatively, you can install with Git:
+
+```
+git clone https://github.com/rabbitgrowth/plover-tapey-tape
+plover -s plover_plugins install -e plover-tapey-tape
+```
+
+and update with `git pull`.
 
 ## Activation
 
