@@ -1,3 +1,11 @@
+#  ,-------.
+# ( \       \    ~/steno $ tapeytape
+#  `-|  'v'  |   [ T     A  EU  P  ] tape
+#    |       |   [  K W RAO E      ] {^ey}
+#    |  _____|   [     H        PB ] {^-^}
+#    \ )      )  [ T     A  EU  P  ] tape
+#     `-------'
+
 import collections
 import datetime
 import json
@@ -6,13 +14,8 @@ import re
 
 import plover
 
-#  ,-------.
-# ( \       \    ~/steno $ tapeytape
-#  `-|  'v'  |   [ T     A  EU  P  ] tape
-#    |       |   [  K W RAO E      ] {^ey}
-#    |  _____|   [     H        PB ] {^-^}
-#    \ )      )  [ T     A  EU  P  ] tape
-#     `-------'
+class ConfigError(Exception):
+    pass
 
 class TapeyTape:
     SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
@@ -85,9 +88,9 @@ class TapeyTape:
             try:
                 converted = convert(value)
             except (TypeError, ValueError):
-                raise TypeError(f'{option} must be {description}')
+                raise ConfigError(f'{option} must be {description}')
             if not check(converted):
-                raise ValueError(f'{option} must be {description}')
+                raise ConfigError(f'{option} must be {description}')
             self.config[option] = converted
 
         self.left_format, *rest = re.split(r'(\s*%s)', self.config['line_format'], maxsplit=1)
@@ -96,7 +99,7 @@ class TapeyTape:
         try:
             self.file = self.config['output_file'].expanduser().open('a')
         except OSError:
-            raise ValueError('output_file could not be opened')
+            raise ConfigError('output_file could not be opened')
 
         # e.g., 1- -> S-, 2- -> T-, etc.
         self.numbers = {number: letter for letter, number in plover.system.NUMBERS.items()}
