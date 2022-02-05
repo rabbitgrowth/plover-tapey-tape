@@ -90,7 +90,7 @@ To update:
 plover -s plover_plugins install --upgrade plover-tapey-tape
 ```
 
-Alternatively, you can install with Git:
+Alternatively, you can use Git:
 
 ```
 git clone https://github.com/rabbitgrowth/plover-tapey-tape
