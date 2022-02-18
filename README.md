@@ -64,46 +64,15 @@ like “vet”, “vetch”, “et”, “etc”, and “etch”.
 
 ## Installation
 
-This plugin is not yet available in Plover’s plugins manager,
-but for the time being, you can install it from
-[PyPI](https://pypi.org/project/plover-tapey-tape/)
-using the command
+To install this plugin, right click the Plover icon, go to Tools →
+Plugins Manager, find `plover-tapey-tape`, and click “Install/Update”.
+When it finishes installing, restart Plover, go to Configure → Plugins,
+and check the box next to `plover-tapey-tape` to activate the plugin.
 
-```
-plover -s plover_plugins install plover-tapey-tape
-```
-
-where `plover` stands for
-
-- Windows: `C:\Program Files (x86)\Open Steno Project\Plover 4.0.0\plover_console.exe`
-- macOS: `/Applications/Plover.app/Contents/MacOS/Plover`
-- Linux: `plover.AppImage`
-
-(The path might be slightly different if you’re on Windows.
- For more detailed instructions, please refer to the
- [Manually Installing Plugins](https://github.com/openstenoproject/plover/wiki/Manually-Installing-Plugins)
- page on the Plover Wiki.)
-
-To update:
-
-```
-plover -s plover_plugins install --upgrade plover-tapey-tape
-```
-
-Alternatively, you can use Git:
-
-```
-git clone https://github.com/rabbitgrowth/plover-tapey-tape
-plover -s plover_plugins install -e plover-tapey-tape
-```
-
-and update with `git pull`.
-
-## Activation
-
-After you’ve installed this plugin, you have to enable it manually
-by opening the main Plover window, going to Configure → Plugins, and
-checking the box next to `plover-tapey-tape`.
+(If you don’t see the plugins manager, it may not be installed
+because you’re using an older version of Plover. Please see the
+[Plugins](https://github.com/openstenoproject/plover/wiki/Plugins)
+page on the Plover Wiki for instructions.)
 
 ## Configuration
 
