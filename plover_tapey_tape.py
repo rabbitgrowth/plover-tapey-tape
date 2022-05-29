@@ -22,7 +22,7 @@ class TapeyTape:
 
     @staticmethod
     def retroformat(translations):
-        return ''.join(plover.formatting.RetroFormatter(translations).last_fragments(0))
+        return ''.join(reversed(list(plover.formatting.RetroFormatter(translations).iter_last_fragments())))
 
     @staticmethod
     def expand(format_string, items):
