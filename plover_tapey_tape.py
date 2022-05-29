@@ -74,7 +74,7 @@ class TapeyTape:
         )
 
         try:
-            with config_dir.joinpath('tapey_tape.json').open() as f:
+            with config_dir.joinpath('tapey_tape.json').open(encoding='utf-8') as f:
                 config = json.load(f)
         except FileNotFoundError:
             config = {}
@@ -97,7 +97,7 @@ class TapeyTape:
         self.right_format = ''.join(rest)
 
         try:
-            self.file = self.config['output_file'].expanduser().open('a')
+            self.file = self.config['output_file'].expanduser().open('a', encoding='utf-8')
         except OSError:
             raise ConfigError('output_file could not be opened')
 
