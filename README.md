@@ -36,6 +36,7 @@ configuration directory:
 
 You can review the file afterwards or use a tool like `tail -f` to
 get a real-time feed.
+- Note: the flag `---disable-inotify` may be required to make the `tail` work for WSL
 
 ## Fingerspelling
 
