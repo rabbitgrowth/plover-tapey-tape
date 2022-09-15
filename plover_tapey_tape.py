@@ -14,12 +14,12 @@ import re
 
 import plover
 
+SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
+
 class ConfigError(Exception):
     pass
 
 class TapeyTape:
-    SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
-
     @staticmethod
     def retroformat(translations):
         return ''.join(reversed(list(plover.formatting.RetroFormatter(translations).iter_last_fragments())))
@@ -242,11 +242,11 @@ class TapeyTape:
             if definition is None:
                 defined = '/'
             else:
-                defined = star + definition.translate(self.SHOW_WHITESPACE)
+                defined = star + definition.translate(SHOW_WHITESPACE)
             # TODO: don't show numbers as untranslate
 
             formatted  = self.retroformat(translations[-1:])
-            translated = star + formatted.translate(self.SHOW_WHITESPACE)
+            translated = star + formatted.translate(SHOW_WHITESPACE)
 
             # Suggestions
             suggestions = []
