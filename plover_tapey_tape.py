@@ -14,6 +14,8 @@ import re
 
 import plover
 
+CONFIG_DIR = pathlib.Path(plover.oslayer.config.CONFIG_DIR)
+
 SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
 
 def retroformat(translations):
@@ -56,10 +58,8 @@ class TapeyTape:
         # as
         #   "bar_time_unit": 0.5
 
-        config_dir = pathlib.Path(plover.oslayer.config.CONFIG_DIR)
-
         options = (
-            ('output_file',   pathlib.Path, lambda x: True, 'a string', config_dir.joinpath('tapey_tape.txt')),
+            ('output_file',   pathlib.Path, lambda x: True, 'a string', CONFIG_DIR.joinpath('tapey_tape.txt')),
             ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
             ('bar_max_width', int, lambda x: True, 'an integer', 5),
             ('bar_time_unit', float, lambda x: x > 0, 'a positive number', 0.2),
@@ -69,7 +69,7 @@ class TapeyTape:
         )
 
         try:
-            with config_dir.joinpath('tapey_tape.json').open(encoding='utf-8') as f:
+            with CONFIG_DIR.joinpath('tapey_tape.json').open(encoding='utf-8') as f:
                 config = json.load(f)
         except FileNotFoundError:
             config = {}
