@@ -75,6 +75,8 @@ class TapeyTape:
             ('bar_threshold', float, lambda x: True, 'a number', 0.0),
             ('bar_alignment', str, lambda x: x in ('left', 'right'), 'either "left" or "right"', 'right'),
             ('line_format', str, lambda x: True, 'a string', '%b |%S| %D  %s'),
+            ('dictionary_names', dict, lambda x: all(isinstance(k, str) and isinstance(v, str) for k, v in x.items()),
+             'a JSON object mapping strings to strings', {}),
         )
 
         self.config = {}
@@ -95,6 +97,9 @@ class TapeyTape:
 
         self.left_format, *rest = re.split(r'(\s*%s)', self.config['line_format'], maxsplit=1)
         self.right_format = ''.join(rest)
+
+        self.dictionary_names = {str(make_absolute(filename)): name
+                                 for filename, name in self.config['dictionary_names'].items()}
 
         # e.g., 1- -> S-, 2- -> T-, etc.
         self.numbers = {number: letter for letter, number in plover.system.NUMBERS.items()}
@@ -211,9 +216,10 @@ class TapeyTape:
             #   |   K    A  EU     G S  | *intoxication
             #   |          *            | *sandbox
             # is probably not what the user expects.)
-            defined     = '*'
-            translated  = '*'
-            suggestions = ''
+            defined         = '*'
+            translated      = '*'
+            dictionary_name = ''
+            suggestions     = ''
             self.was_fingerspelling = False
         else:
             # We can now rest assured that the translation stack is non-empty.
@@ -239,6 +245,14 @@ class TapeyTape:
 
             formatted  = retroformat(translations[-1:])
             translated = star + formatted.translate(SHOW_WHITESPACE)
+
+            # Dictionary name
+            for dictionary in self.engine.dictionaries.dicts:
+                if translations[-1].rtfcre in dictionary:
+                    dictionary_name = self.dictionary_names.get(dictionary.path, '')
+                    break
+            else:
+                dictionary_name = ''
 
             # Suggestions
             suggestions = []
@@ -277,6 +291,7 @@ class TapeyTape:
                       'r': raw_steno,
                       'D': defined,
                       'T': translated,
+                      'd': dictionary_name,
                       's': suggestions,
                       '%': '%'}
 
