@@ -58,16 +58,6 @@ class TapeyTape:
                 if len(outline) < stroke_count]
 
     def start(self):
-        options = (
-            ('output_file',   str, lambda x: True, 'a string', 'tapey_tape.txt'),
-            ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
-            ('bar_max_width', int, lambda x: True, 'an integer', 5),
-            ('bar_time_unit', float, lambda x: x > 0, 'a positive number', 0.2),
-            ('bar_threshold', float, lambda x: True, 'a number', 0.0),
-            ('bar_alignment', str, lambda x: x in ('left', 'right'), 'either "left" or "right"', 'right'),
-            ('line_format',   str, lambda x: True, 'a string', '%b |%S| %D  %s'),
-        )
-
         try:
             with (CONFIG_DIR / 'tapey_tape.json').open(encoding='utf-8') as f:
                 config = json.load(f)
@@ -76,6 +66,16 @@ class TapeyTape:
         else:
             if not isinstance(config, dict):
                 raise ConfigError('Settings must be a JSON object')
+
+        options = (
+            ('output_file', str, lambda x: True, 'a string', 'tapey_tape.txt'),
+            ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
+            ('bar_max_width', int, lambda x: True, 'an integer', 5),
+            ('bar_time_unit', float, lambda x: x > 0, 'a positive number', 0.2),
+            ('bar_threshold', float, lambda x: True, 'a number', 0.0),
+            ('bar_alignment', str, lambda x: x in ('left', 'right'), 'either "left" or "right"', 'right'),
+            ('line_format', str, lambda x: True, 'a string', '%b |%S| %D  %s'),
+        )
 
         self.config = {}
         for option, type_, condition, description, default in options:
