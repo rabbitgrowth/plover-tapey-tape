@@ -16,31 +16,26 @@ import plover
 
 SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
 
+def retroformat(translations):
+    return ''.join(reversed(list(plover.formatting.RetroFormatter(translations).iter_last_fragments())))
+
+def expand(format_string, items):
+    def replace(match):
+        width, letter = match.groups()
+        width = 0 if not width else int(width)
+        return items.get(letter, '').ljust(width)
+    return re.sub('%(\d*)(.)', replace, format_string)
+
+def is_fingerspelling(translation):
+    return any(action.glue for action in translation.formatting)
+
+def is_whitespace(translation):
+    return all(not action.text or action.text.isspace() for action in translation.formatting)
+
 class ConfigError(Exception):
     pass
 
 class TapeyTape:
-    @staticmethod
-    def retroformat(translations):
-        return ''.join(reversed(list(plover.formatting.RetroFormatter(translations).iter_last_fragments())))
-
-    @staticmethod
-    def expand(format_string, items):
-        def replace(match):
-            width, letter = match.groups()
-            width = 0 if not width else int(width)
-            return items.get(letter, '').ljust(width)
-        return re.sub('%(\d*)(.)', replace, format_string)
-
-    @staticmethod
-    def is_fingerspelling(translation):
-        # For simplicity, just equate glue with fingerspelling for now
-        return any(action.glue for action in translation.formatting)
-
-    @staticmethod
-    def is_whitespace(translation):
-        return all(not action.text or action.text.isspace() for action in translation.formatting)
-
     def __init__(self, engine):
         self.engine = engine
 
@@ -48,7 +43,7 @@ class TapeyTape:
         self.was_fingerspelling = False
 
     def get_suggestions(self, translations):
-        text = self.retroformat(translations)
+        text = retroformat(translations)
         stroke_count = sum(len(translation.rtfcre) for translation in translations)
         return [outline
                 for suggestion in self.engine.get_suggestions(text)
@@ -111,7 +106,7 @@ class TapeyTape:
 
     def stop(self):
         if self.was_fingerspelling:
-            self.file.write(self.expand(self.right_format, self.items).rstrip())
+            self.file.write(expand(self.right_format, self.items).rstrip())
             self.file.write('\n')
 
         self.engine.hook_disconnect('stroked', self.on_stroked)
@@ -169,12 +164,12 @@ class TapeyTape:
             #   after &a. We can identify this case by looking at whether anything got replaced
             #   in the current last-translation.
             if (not translations
-                    or self.is_fingerspelling(translations[-1])
+                    or is_fingerspelling(translations[-1])
                     or stroke.is_correction
                     or translations[-1].replaced):
                 self.items['s'] = '' # suppress suggestions
 
-            self.file.write(self.expand(self.right_format, self.items).rstrip())
+            self.file.write(expand(self.right_format, self.items).rstrip())
             self.file.write('\n')
 
         # Bar
@@ -245,17 +240,17 @@ class TapeyTape:
                 defined = star + definition.translate(SHOW_WHITESPACE)
             # TODO: don't show numbers as untranslate
 
-            formatted  = self.retroformat(translations[-1:])
+            formatted  = retroformat(translations[-1:])
             translated = star + formatted.translate(SHOW_WHITESPACE)
 
             # Suggestions
             suggestions = []
 
-            if not self.is_whitespace(translations[-1]):
+            if not is_whitespace(translations[-1]):
                 buffer = []
                 deque  = collections.deque()
                 for translation in reversed(translations):
-                    if self.is_fingerspelling(translation):
+                    if is_fingerspelling(translation):
                         buffer.append(translation)
                     else:
                         if buffer:
@@ -263,7 +258,7 @@ class TapeyTape:
                             buffer = []
                             suggestions.append(self.get_suggestions(deque))
                         deque.appendleft(translation)
-                        if not self.is_whitespace(translation):
+                        if not is_whitespace(translation):
                             suggestions.append(self.get_suggestions(deque))
                     # Don't try to get suggestions for very long strings.
                     # TODO: make this customizable?
@@ -277,7 +272,7 @@ class TapeyTape:
                                    for i, outlines in enumerate(suggestions, start=1)
                                    if outlines)
 
-            self.was_fingerspelling = self.is_fingerspelling(translations[-1])
+            self.was_fingerspelling = is_fingerspelling(translations[-1])
 
         self.items = {'t': time,
                       'b': bar,
@@ -288,10 +283,10 @@ class TapeyTape:
                       's': suggestions,
                       '%': '%'}
 
-        self.file.write(self.expand(self.left_format, self.items))
+        self.file.write(expand(self.left_format, self.items))
 
         if not self.was_fingerspelling:
-            self.file.write(self.expand(self.right_format, self.items).rstrip())
+            self.file.write(expand(self.right_format, self.items).rstrip())
             self.file.write('\n')
 
         self.file.flush()
