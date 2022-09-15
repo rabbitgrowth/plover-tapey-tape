@@ -18,6 +18,12 @@ CONFIG_DIR = pathlib.Path(plover.oslayer.config.CONFIG_DIR)
 
 SHOW_WHITESPACE = str.maketrans({'\n': '\\n', '\r': '\\r', '\t': '\\t'})
 
+def make_absolute(filename):
+    path = pathlib.Path(filename).expanduser()
+    if not path.is_absolute():
+        return CONFIG_DIR / path
+    return path
+
 def retroformat(translations):
     return ''.join(reversed(list(plover.formatting.RetroFormatter(translations).iter_last_fragments())))
 
@@ -59,7 +65,7 @@ class TapeyTape:
         #   "bar_time_unit": 0.5
 
         options = (
-            ('output_file',   pathlib.Path, lambda x: True, 'a string', CONFIG_DIR.joinpath('tapey_tape.txt')),
+            ('output_file',   str, lambda x: True, 'a string', 'tapey_tape.txt'),
             ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
             ('bar_max_width', int, lambda x: True, 'an integer', 5),
             ('bar_time_unit', float, lambda x: x > 0, 'a positive number', 0.2),
@@ -69,7 +75,7 @@ class TapeyTape:
         )
 
         try:
-            with CONFIG_DIR.joinpath('tapey_tape.json').open(encoding='utf-8') as f:
+            with (CONFIG_DIR / 'tapey_tape.json').open(encoding='utf-8') as f:
                 config = json.load(f)
         except FileNotFoundError:
             config = {}
@@ -95,7 +101,7 @@ class TapeyTape:
         self.right_format = ''.join(rest)
 
         try:
-            self.file = self.config['output_file'].expanduser().open('a', encoding='utf-8')
+            self.file = make_absolute(self.config['output_file']).open('a', encoding='utf-8')
         except OSError:
             raise ConfigError('output_file could not be opened')
 
