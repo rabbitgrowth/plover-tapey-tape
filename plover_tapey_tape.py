@@ -78,6 +78,9 @@ class TapeyTape:
                 config = json.load(f)
         except FileNotFoundError:
             config = {}
+        else:
+            if not isinstance(config, dict):
+                raise ConfigError('Settings must be a JSON object')
 
         self.config = {}
         for option, convert, check, description, default in options:
