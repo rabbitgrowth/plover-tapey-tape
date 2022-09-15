@@ -58,11 +58,6 @@ class TapeyTape:
                 if len(outline) < stroke_count]
 
     def start(self):
-        # Be lenient with types in the JSON config. For example, just interpret
-        #   "bar_time_unit": "0.5"
-        # as
-        #   "bar_time_unit": 0.5
-
         options = (
             ('output_file',   str, lambda x: True, 'a string', 'tapey_tape.txt'),
             ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
@@ -83,18 +78,15 @@ class TapeyTape:
                 raise ConfigError('Settings must be a JSON object')
 
         self.config = {}
-        for option, convert, check, description, default in options:
-            value = config.get(option)
-            if value is None:
-                self.config[option] = default
-                continue
+        for option, type_, condition, description, default in options:
             try:
-                converted = convert(value)
-            except (TypeError, ValueError):
-                raise ConfigError(f'{option} must be {description}')
-            if not check(converted):
-                raise ConfigError(f'{option} must be {description}')
-            self.config[option] = converted
+                value = config[option]
+            except KeyError:
+                value = default
+            else:
+                if not (isinstance(value, type_) and condition(value)):
+                    raise ConfigError(f'{option} must be {description}')
+            self.config[option] = value
 
         try:
             self.file = make_absolute(self.config['output_file']).open('a', encoding='utf-8')
