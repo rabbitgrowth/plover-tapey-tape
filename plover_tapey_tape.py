@@ -97,13 +97,13 @@ class TapeyTape:
                 raise ConfigError(f'{option} must be {description}')
             self.config[option] = converted
 
-        self.left_format, *rest = re.split(r'(\s*%s)', self.config['line_format'], maxsplit=1)
-        self.right_format = ''.join(rest)
-
         try:
             self.file = make_absolute(self.config['output_file']).open('a', encoding='utf-8')
         except OSError:
             raise ConfigError('output_file could not be opened')
+
+        self.left_format, *rest = re.split(r'(\s*%s)', self.config['line_format'], maxsplit=1)
+        self.right_format = ''.join(rest)
 
         # e.g., 1- -> S-, 2- -> T-, etc.
         self.numbers = {number: letter for letter, number in plover.system.NUMBERS.items()}
