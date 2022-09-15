@@ -46,8 +46,7 @@ class ConfigError(Exception):
 class TapeyTape:
     def __init__(self, engine):
         self.engine = engine
-
-        self.last_stroke_time   = None
+        self.last_stroke_time = None
         self.was_fingerspelling = False
 
     def get_suggestions(self, translations):
