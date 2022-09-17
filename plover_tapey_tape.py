@@ -69,13 +69,13 @@ class TapeyTape:
 
         options = (
             ('output_file', str, lambda x: True, 'a string', 'tapey_tape.txt'),
+            ('line_format', str, lambda x: True, 'a string', '%b |%S| %D  %s'),
             ('bar_character', str, lambda x: len(x) == 1, 'a 1-character string', '+'),
             ('bar_max_width', int, lambda x: True, 'an integer', 5),
             ('bar_time_unit', float, lambda x: x > 0, 'a positive number', 0.2),
             ('bar_threshold', float, lambda x: True, 'a number', 0.0),
             ('bar_alignment', str, lambda x: x in ('left', 'right'), 'either "left" or "right"', 'right'),
             ('suggestions_marker', str, lambda x: True, 'a string', '>'),
-            ('line_format', str, lambda x: True, 'a string', '%b |%S| %D  %s'),
             ('dictionary_names', dict, lambda x: all(isinstance(k, str) and isinstance(v, str) for k, v in x.items()),
              'a JSON object mapping strings to strings', {}),
         )
