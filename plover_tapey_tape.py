@@ -279,7 +279,8 @@ class TapeyTape:
                     deque.extendleft(buffer)
                     suggestions.append(self.get_suggestions(deque))
 
-            suggestions = ' '.join('>' * i + ' '.join(map('/'.join, outlines))
+            suggestions = ' '.join((str(i) if i > 1 else '') + '>'
+                                   + ' '.join(map('/'.join, outlines))
                                    for i, outlines in enumerate(suggestions, start=1)
                                    if outlines)
 
