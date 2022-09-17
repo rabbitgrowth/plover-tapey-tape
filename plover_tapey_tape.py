@@ -32,7 +32,7 @@ def expand(format_string, items):
         width, letter = matchobj.groups()
         width = 0 if not width else int(width)
         return items.get(letter, '').ljust(width)
-    return re.sub('%(\d*)(.)', replace, format_string)
+    return re.sub(r'%(\d*)(.)', replace, format_string)
 
 def is_fingerspelling(translation):
     return any(action.glue for action in translation.formatting)
