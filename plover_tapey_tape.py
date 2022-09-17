@@ -28,8 +28,8 @@ def retroformat(translations):
     return ''.join(reversed(list(plover.formatting.RetroFormatter(translations).iter_last_fragments())))
 
 def expand(format_string, items):
-    def replace(match):
-        width, letter = match.groups()
+    def replace(matchobj):
+        width, letter = matchobj.groups()
         width = 0 if not width else int(width)
         return items.get(letter, '').ljust(width)
     return re.sub('%(\d*)(.)', replace, format_string)
