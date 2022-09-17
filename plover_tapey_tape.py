@@ -260,7 +260,7 @@ class TapeyTape:
 
             if not is_whitespace(translations[-1]):
                 buffer = []
-                deque  = collections.deque()
+                deque = collections.deque()
                 for translation in reversed(translations):
                     if is_fingerspelling(translation):
                         buffer.append(translation)
