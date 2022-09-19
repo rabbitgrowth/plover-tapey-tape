@@ -339,7 +339,7 @@ class TapeyTape:
                             for outline in self.engine.dictionaries.reverse_lookup(suggestion_key)
                             if len(outline) < total_strokes]
                 if outlines:
-                    prefix = str(i) if i > 1 else ''
+                    prefix = '' if i == 1 else str(i)
                     chunks.append(prefix + self.config['suggestions_marker'] + ' '.join(outlines))
             suggestions = ' '.join(chunks)
 
