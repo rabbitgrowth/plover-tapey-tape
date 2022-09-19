@@ -33,7 +33,8 @@ def is_whitespace(translation):
 def is_retro(translation):
     return any(translation.english.startswith(start) for start in ('{*', '{:retro_', '=retrospective'))
 
-def starts_with_lowercase(definition):
+def definition_starts_with_lowercase(translation):
+    definition = translation.english
     return (definition
             and (definition[0].islower()
                  or (definition.startswith('{')
@@ -89,7 +90,7 @@ def get_suggestion_keys(translations):
         if (last_action is None
                 and output
                 and output[0].isupper()
-                and starts_with_lowercase(translations[0].english)):
+                and definition_starts_with_lowercase(translations[0])):
             output = output[0].lower() + output[1:]
         last_action = action
     if actions[0].prev_attach and actions[-1].next_attach:
