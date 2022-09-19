@@ -341,6 +341,8 @@ class TapeyTape:
                 if outlines:
                     prefix = '' if i == 1 else str(i)
                     chunks.append(prefix + self.config['suggestions_marker'] + ' '.join(outlines))
+                if i == 10:
+                    break
             suggestions = ' '.join(chunks)
 
             self.was_fingerspelling = is_fingerspelling(translations[-1])
