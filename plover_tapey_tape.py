@@ -333,14 +333,14 @@ class TapeyTape:
             # Suggestions
             chunks = []
             for i, tail in enumerate(tails(translations), start=1):
+                total_strokes = sum(len(translation.rtfcre) for translation in tail)
                 outlines = ['/'.join(outline)
                             for suggestion_key in get_suggestion_keys(tail)
                             for outline in self.engine.dictionaries.reverse_lookup(suggestion_key)
-                            if len(outline) < sum(len(translation.rtfcre) for translation in tail)]
+                            if len(outline) < total_strokes]
                 if outlines:
-                    chunks.append((str(i) if i > 1 else '')
-                                  + self.config['suggestions_marker']
-                                  + ' '.join(outlines))
+                    prefix = str(i) if i > 1 else ''
+                    chunks.append(prefix + self.config['suggestions_marker'] + ' '.join(outlines))
             suggestions = ' '.join(chunks)
 
             self.was_fingerspelling = is_fingerspelling(translations[-1])
