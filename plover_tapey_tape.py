@@ -49,8 +49,8 @@ def tails(translations):
     assert translations
     if is_whitespace(translations[-1]) and not is_retro(translations[-1]):
         return
-    fingerspellings = []
     tail = collections.deque()
+    fingerspellings = []
     for translation in reversed(translations):
         if is_fingerspelling(translation):
             fingerspellings.append(translation)
