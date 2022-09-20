@@ -31,7 +31,17 @@ def is_whitespace(translation):
     return all(not action.text or action.text.isspace() for action in translation.formatting)
 
 def is_retro(translation):
-    return any(translation.english.startswith(start) for start in ('{*', '{:retro_', '=retrospective'))
+    definition = translation.english
+    return (definition is not None
+            and any(definition.startswith(start) for start in ('{*', '{:retro_', '=retrospective')))
+
+def is_prefix(translation):
+    definition = translation.english
+    return definition is not None and definition.startswith('{^')
+
+def is_suffix(translation):
+    definition = translation.english
+    return definition is not None and definition.endswith('^}')
 
 def definition_starts_with_lowercase(translation):
     definition = translation.english
@@ -67,37 +77,33 @@ def tails(translations):
 
 def get_suggestion_keys(translations):
     assert translations
-    actions = [action
-               for translation in translations
-               for action in translation.formatting]
-    if not actions:
-        return []
     output = ''
     last_action = None
-    for action in actions:
-        replace = len(action.prev_replace)
-        if replace > len(output):
-            return []
-        if replace:
-            output = output[:-replace]
-        if (output
-                and last_action is not None
-                and action.text is not None
-                and not action.prev_attach):
-            output += action.space_char
-        if action.text is not None:
-            output += action.text
-        if (last_action is None
-                and output
-                and output[0].isupper()
-                and definition_starts_with_lowercase(translations[0])):
-            output = output[0].lower() + output[1:]
-        last_action = action
-    if actions[0].prev_attach and actions[-1].next_attach:
+    for translation in translations:
+        for action in translation.formatting:
+            replace = len(action.prev_replace)
+            if is_retro(translation) and replace > len(output):
+                return []
+            if replace:
+                output = output[:-replace]
+            if (output
+                    and last_action is not None
+                    and action.text is not None
+                    and not action.prev_attach):
+                output += action.space_char
+            if action.text is not None:
+                output += action.text
+            if (last_action is None
+                    and output
+                    and output[0].isupper()
+                    and definition_starts_with_lowercase(translations[0])):
+                output = output[0].lower() + output[1:]
+            last_action = action
+    if is_prefix(translations[0]) and is_suffix(translations[-1]):
         return [f'{{^{output}^}}', f'{{^}}{output}{{^}}']
-    if actions[0].prev_attach:
+    if is_prefix(translations[0]):
         return [f'{{^{output}}}', f'{{^}}{output}']
-    if actions[-1].next_attach:
+    if is_suffix(translations[-1]):
         return [f'{{{output}^}}', f'{output}{{^}}']
     return [output]
 
