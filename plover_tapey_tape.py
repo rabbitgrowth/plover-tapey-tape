@@ -30,7 +30,7 @@ def is_fingerspelling(translation):
 def is_whitespace(translation):
     return all(not action.text or action.text.isspace() for action in translation.formatting)
 
-def is_retro(translation):
+def is_retroactive(translation):
     definition = translation.english
     return (definition is not None
             and any(definition.startswith(start) for start in ('{*', '{:retro_', '=retrospective')))
@@ -57,7 +57,7 @@ def definition_starts_with_lowercase(translation):
 
 def tails(translations):
     assert translations
-    if is_whitespace(translations[-1]) and not is_retro(translations[-1]):
+    if is_whitespace(translations[-1]) and not is_retroactive(translations[-1]):
         return
     tail = collections.deque()
     fingerspellings = []
@@ -82,7 +82,7 @@ def get_suggestion_keys(translations):
     for translation in translations:
         for action in translation.formatting:
             replace = len(action.prev_replace)
-            if is_retro(translation) and replace > len(output):
+            if is_retroactive(translation) and replace > len(output):
                 return []
             if replace:
                 output = output[:-replace]
