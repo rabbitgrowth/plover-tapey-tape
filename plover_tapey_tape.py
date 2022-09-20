@@ -56,8 +56,8 @@ def definition_starts_with_lowercase(translation):
                      and definition[3].islower())))
 
 def tails(translations):
-    assert translations
-    if is_whitespace(translations[-1]) and not is_retroactive(translations[-1]):
+    if (not translations
+            or is_whitespace(translations[-1]) and not is_retroactive(translations[-1])):
         return
     tail = collections.deque()
     fingerspellings = []
@@ -76,7 +76,8 @@ def tails(translations):
         yield tuple(tail)
 
 def get_suggestion_keys(translations):
-    assert translations
+    if not translations:
+        return []
     output = ''
     last_action = None
     for translation in translations:
