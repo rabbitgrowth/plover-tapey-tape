@@ -8,6 +8,7 @@
 
 import collections
 import datetime
+import itertools
 import json
 import pathlib
 import re
@@ -24,8 +25,113 @@ def make_absolute(filename):
         return CONFIG_DIR / path
     return path
 
-def retroformat(translations):
-    return ''.join(reversed(list(plover.formatting.RetroFormatter(translations).iter_last_fragments())))
+def has_no_text(translation):
+    return all(not action.text for action in translation.formatting)
+
+def is_attach(translation):
+    actions = translation.formatting
+    return (len(actions) == 1
+            and not actions[0].text # Plover sets it to '' instead of None for some reason
+            and actions[0].prev_attach
+            and actions[0].next_attach)
+
+def is_fingerspelling(translation):
+    return any(action.glue for action in translation.formatting)
+
+def is_retroactive(translation):
+    definition = translation.english
+    return (definition is not None
+            and any(definition.startswith(start) for start in ('{*', '{:retro_', '=retrospective')))
+
+def is_prefix(translation):
+    definition = translation.english
+    return definition is not None and definition.startswith('{^')
+
+def is_suffix(translation):
+    definition = translation.english
+    return definition is not None and definition.endswith('^}')
+
+def definition_starts_with_lowercase(translation):
+    definition = translation.english
+    return (definition
+            and (definition[0].islower()
+                 or (definition.startswith('{')
+                     and definition.endswith('^}')
+                     and definition[1].islower())
+                 or (definition.startswith('{^')
+                     and definition[2].islower())
+                 or (definition.startswith('{^}')
+                     and definition[3].islower())))
+
+def tails(translations):
+    if (not translations
+            or has_no_text(translations[-1]) and not is_attach(translations[-1])):
+        return
+    tail = collections.deque()
+    fingerspellings = []
+    for translation in reversed(translations):
+        if is_fingerspelling(translation):
+            fingerspellings.append(translation)
+        else:
+            if fingerspellings:
+                tail.extendleft(fingerspellings)
+                fingerspellings = []
+                yield tuple(tail)
+            tail.appendleft(translation)
+            yield tuple(tail)
+    if fingerspellings:
+        tail.extendleft(fingerspellings)
+        yield tuple(tail)
+
+def suggestion_keys(translations):
+    if not translations or all(map(is_attach, translations)):
+        return []
+    output = ''
+    last_action = None
+    for translation in translations:
+        for action in translation.formatting:
+            replace = len(action.prev_replace)
+            if is_retroactive(translation) and replace > len(output):
+                return []
+            if replace:
+                output = output[:-replace]
+            if (output
+                    and last_action is not None
+                    and action.text is not None
+                    and not action.prev_attach):
+                output += action.space_char
+            if action.text is not None:
+                output += action.text
+            if (last_action is None
+                    and output
+                    and output[0].isupper()
+                    and definition_starts_with_lowercase(translations[0])):
+                output = output[0].lower() + output[1:]
+            last_action = action
+    if is_prefix(translations[0]) and is_suffix(translations[-1]):
+        return [f'{{^{output}^}}', f'{{^}}{output}{{^}}']
+    if is_prefix(translations[0]):
+        return [f'{{^{output}}}', f'{{^}}{output}']
+    if is_suffix(translations[-1]):
+        return [f'{{{output}^}}', f'{output}{{^}}']
+    return [output]
+
+def retroformat(translation):
+    output = ''
+    last_action = None
+    for action in translation.formatting:
+        replace = len(action.prev_replace)
+        if replace:
+            output = output[:-replace]
+        if (output
+                and last_action is not None
+                and action.text is not None
+                and not action.prev_attach):
+            output += action.space_char
+        if action.text is not None:
+            output += action.text
+        last_action = action
+    return output
 
 def expand(format_string, items):
     def replace(matchobj):
@@ -33,12 +139,6 @@ def expand(format_string, items):
         width = 0 if not width else int(width)
         return items.get(letter, '').ljust(width)
     return re.sub(r'%(\d*)(.)', replace, format_string)
-
-def is_fingerspelling(translation):
-    return any(action.glue for action in translation.formatting)
-
-def is_whitespace(translation):
-    return all(not action.text or action.text.isspace() for action in translation.formatting)
 
 class ConfigError(Exception):
     pass
@@ -48,14 +148,6 @@ class TapeyTape:
         self.engine = engine
         self.last_stroke_time = None
         self.was_fingerspelling = False
-
-    def get_suggestions(self, translations):
-        text = retroformat(translations)
-        stroke_count = sum(len(translation.rtfcre) for translation in translations)
-        return [outline
-                for suggestion in self.engine.get_suggestions(text)
-                for outline in suggestion.steno_list
-                if len(outline) < stroke_count]
 
     def start(self):
         try:
@@ -244,8 +336,7 @@ class TapeyTape:
                 defined = star + definition.translate(SHOW_WHITESPACE)
             # TODO: don't show numbers as untranslate
 
-            formatted  = retroformat(translations[-1:])
-            translated = star + formatted.translate(SHOW_WHITESPACE)
+            translated = star + retroformat(translations[-1]).translate(SHOW_WHITESPACE)
 
             # Dictionary name
             for dictionary in self.engine.dictionaries.dicts:
@@ -256,35 +347,21 @@ class TapeyTape:
                 dictionary_name = ''
 
             # Suggestions
-            suggestions = []
-
-            if not is_whitespace(translations[-1]):
-                buffer = []
-                deque = collections.deque()
-                for translation in reversed(translations):
-                    if is_fingerspelling(translation):
-                        buffer.append(translation)
-                    else:
-                        if buffer:
-                            deque.extendleft(buffer)
-                            buffer = []
-                            suggestions.append(self.get_suggestions(deque))
-                        deque.appendleft(translation)
-                        if not is_whitespace(translation):
-                            suggestions.append(self.get_suggestions(deque))
-                    # Don't try to get suggestions for very long strings.
-                    # TODO: make this customizable?
-                    if len(suggestions) >= 10:
-                        break
-                if buffer:
-                    deque.extendleft(buffer)
-                    suggestions.append(self.get_suggestions(deque))
-
-            suggestions = ' '.join((str(i) if i > 1 else '')
-                                   + self.config['suggestions_marker']
-                                   + ' '.join(map('/'.join, outlines))
-                                   for i, outlines in enumerate(suggestions, start=1)
-                                   if outlines)
+            chunks = []
+            seen_suggestion_keys = set()
+            for i, tail in enumerate(itertools.islice(tails(translations), 10), 1):
+                outlines = []
+                total_strokes = sum(len(translation.rtfcre) for translation in tail)
+                for suggestion_key in suggestion_keys(tail):
+                    if suggestion_key not in seen_suggestion_keys:
+                        seen_suggestion_keys.add(suggestion_key)
+                        for outline in self.engine.dictionaries.reverse_lookup(suggestion_key):
+                            if len(outline) < total_strokes:
+                                outlines.append('/'.join(outline))
+                if outlines:
+                    prefix = '' if i == 1 else str(i)
+                    chunks.append(prefix + self.config['suggestions_marker'] + ' '.join(outlines))
+            suggestions = ' '.join(chunks)
 
             self.was_fingerspelling = is_fingerspelling(translations[-1])
 
