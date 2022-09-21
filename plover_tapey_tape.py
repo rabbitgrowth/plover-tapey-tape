@@ -74,7 +74,7 @@ def tails(translations):
         tail.extendleft(fingerspellings)
         yield tuple(tail)
 
-def get_suggestion_keys(translations):
+def suggestion_keys(translations):
     if not translations:
         return []
     output = ''
@@ -342,7 +342,7 @@ class TapeyTape:
             for i, tail in enumerate(tails(translations), start=1):
                 total_strokes = sum(len(translation.rtfcre) for translation in tail)
                 outlines = ['/'.join(outline)
-                            for suggestion_key in get_suggestion_keys(tail)
+                            for suggestion_key in suggestion_keys(tail)
                             for outline in self.engine.dictionaries.reverse_lookup(suggestion_key)
                             if len(outline) < total_strokes]
                 if outlines:
