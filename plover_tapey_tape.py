@@ -25,11 +25,11 @@ def make_absolute(filename):
         return CONFIG_DIR / path
     return path
 
+def has_no_text(translation):
+    return all(not action.text for action in translation.formatting)
+
 def is_fingerspelling(translation):
     return any(action.glue for action in translation.formatting)
-
-def is_whitespace(translation):
-    return all(not action.text or action.text.isspace() for action in translation.formatting)
 
 def is_retroactive(translation):
     definition = translation.english
@@ -57,7 +57,7 @@ def definition_starts_with_lowercase(translation):
                      and definition[3].islower())))
 
 def tails(translations):
-    if not translations or is_whitespace(translations[-1]):
+    if not translations or has_no_text(translations[-1]):
         return
     tail = collections.deque()
     fingerspellings = []
