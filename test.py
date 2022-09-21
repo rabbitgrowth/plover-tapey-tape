@@ -89,5 +89,23 @@ class TestSuggestionKeys(unittest.TestCase):
         self.assertEqual(plover_tapey_tape.suggestion_keys(translations[-3:]), ['shipman'])
         self.assertEqual(plover_tapey_tape.suggestion_keys(translations),      ['midshipman'])
 
+    def test_invalid_overbackspacing(self):
+        translations = [
+            T(english='united',           formatting=[A(text='united')]),
+            T(english='states',           formatting=[A(text='states')]),
+            T(english='{:retro_title:2}', formatting=[A(prev_attach=True, prev_replace='united states', text='United States')]),
+        ]
+        self.assertEqual(plover_tapey_tape.suggestion_keys(translations[-1:]), [])
+        self.assertEqual(plover_tapey_tape.suggestion_keys(translations[-2:]), [])
+        self.assertEqual(plover_tapey_tape.suggestion_keys(translations),      ['United States'])
+
+    def test_valid_overbackspacing(self):
+        translations = [
+            T(english='smoke',  formatting=[A(text='smoke')]),
+            T(english='{^ing}', formatting=[A(prev_attach=True, prev_replace='e', text='ing')]),
+        ]
+        self.assertEqual(plover_tapey_tape.suggestion_keys(translations[-1:]), ['{^ing}', '{^}ing'])
+        self.assertEqual(plover_tapey_tape.suggestion_keys(translations),      ['smoking'])
+
 if __name__ == '__main__':
     unittest.main()
