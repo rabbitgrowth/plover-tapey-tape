@@ -50,11 +50,14 @@ class TestTails(unittest.TestCase):
         self.assertEqual(list(map(len, plover_tapey_tape.tails(translations))), [1, 4])
 
 class TestSuggestionKeys(unittest.TestCase):
-    def test_attach(self):
+    def test_attach_only(self):
         translations = [
             T(english='{^}', formatting=[A(prev_attach=True, next_attach=True, text='')]),
+            T(english='{^}', formatting=[A(prev_attach=True, next_attach=True, text='')]),
+            T(english='{^}', formatting=[A(prev_attach=True, next_attach=True, text='')]),
         ]
-        self.assertEqual(plover_tapey_tape.suggestion_keys(translations), [])
+        self.assertEqual(plover_tapey_tape.suggestion_keys(translations[:1]), [])
+        self.assertEqual(plover_tapey_tape.suggestion_keys(translations),     [])
 
     def test_affixes_in_definition(self):
         translations = [
