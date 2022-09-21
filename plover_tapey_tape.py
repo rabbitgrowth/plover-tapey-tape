@@ -8,6 +8,7 @@
 
 import collections
 import datetime
+import itertools
 import json
 import pathlib
 import re
@@ -340,7 +341,7 @@ class TapeyTape:
             # Suggestions
             chunks = []
             seen_suggestion_keys = set()
-            for i, tail in enumerate(tails(translations), start=1):
+            for i, tail in enumerate(itertools.islice(tails(translations), 10), 1):
                 outlines = []
                 total_strokes = sum(len(translation.rtfcre) for translation in tail)
                 for suggestion_key in suggestion_keys(tail):
@@ -352,8 +353,6 @@ class TapeyTape:
                 if outlines:
                     prefix = '' if i == 1 else str(i)
                     chunks.append(prefix + self.config['suggestions_marker'] + ' '.join(outlines))
-                if i == 10:
-                    break
             suggestions = ' '.join(chunks)
 
             self.was_fingerspelling = is_fingerspelling(translations[-1])
