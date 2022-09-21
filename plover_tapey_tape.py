@@ -339,12 +339,16 @@ class TapeyTape:
 
             # Suggestions
             chunks = []
+            seen_suggestion_keys = set()
             for i, tail in enumerate(tails(translations), start=1):
+                outlines = []
                 total_strokes = sum(len(translation.rtfcre) for translation in tail)
-                outlines = ['/'.join(outline)
-                            for suggestion_key in suggestion_keys(tail)
-                            for outline in self.engine.dictionaries.reverse_lookup(suggestion_key)
-                            if len(outline) < total_strokes]
+                for suggestion_key in suggestion_keys(tail):
+                    if suggestion_key not in seen_suggestion_keys:
+                        seen_suggestion_keys.add(suggestion_key)
+                        for outline in self.engine.dictionaries.reverse_lookup(suggestion_key):
+                            if len(outline) < total_strokes:
+                                outlines.append('/'.join(outline))
                 if outlines:
                     prefix = '' if i == 1 else str(i)
                     chunks.append(prefix + self.config['suggestions_marker'] + ' '.join(outlines))
