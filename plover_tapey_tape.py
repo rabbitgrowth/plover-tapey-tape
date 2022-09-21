@@ -31,7 +31,7 @@ def has_no_text(translation):
 def is_attach(translation):
     actions = translation.formatting
     return (len(actions) == 1
-            and not actions[0].text
+            and not actions[0].text # Plover sets it to '' instead of None for some reason
             and actions[0].prev_attach
             and actions[0].next_attach)
 
