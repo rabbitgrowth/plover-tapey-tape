@@ -28,6 +28,13 @@ def make_absolute(filename):
 def has_no_text(translation):
     return all(not action.text for action in translation.formatting)
 
+def is_attach(translation):
+    actions = translation.formatting
+    return (len(actions) == 1
+            and not actions[0].text
+            and actions[0].prev_attach
+            and actions[0].next_attach)
+
 def is_fingerspelling(translation):
     return any(action.glue for action in translation.formatting)
 
@@ -57,7 +64,8 @@ def definition_starts_with_lowercase(translation):
                      and definition[3].islower())))
 
 def tails(translations):
-    if not translations or has_no_text(translations[-1]):
+    if (not translations
+            or has_no_text(translations[-1]) and not is_attach(translations[-1])):
         return
     tail = collections.deque()
     fingerspellings = []
@@ -76,7 +84,7 @@ def tails(translations):
         yield tuple(tail)
 
 def suggestion_keys(translations):
-    if not translations:
+    if not translations or all(map(is_attach, translations)):
         return []
     output = ''
     last_action = None
