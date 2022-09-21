@@ -56,8 +56,7 @@ def definition_starts_with_lowercase(translation):
                      and definition[3].islower())))
 
 def tails(translations):
-    if (not translations
-            or is_whitespace(translations[-1]) and not is_retroactive(translations[-1])):
+    if not translations or is_whitespace(translations[-1]):
         return
     tail = collections.deque()
     fingerspellings = []
