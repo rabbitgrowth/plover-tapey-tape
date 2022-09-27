@@ -38,7 +38,7 @@ strokes than necessary:
 ```
 |    P      E  R        | per
 |  T P    O    R        | for
-|    P H A      PB   S  | *performance  >PORPBGS
+|    P H A      PB   S  | *performance  >PO*RPLS
 ```
 
 When multiple translations are referred to, the number of translations
