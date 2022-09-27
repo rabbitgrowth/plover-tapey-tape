@@ -7,7 +7,7 @@ some extra information such as bars showing hesitation time and
 suggestions showing opportunities to save strokes.
 
 ```
-      |   KP   A              | {}{-|}
+      |   KP   A              | {-|}
    ++ |      H AO E  R        | here
     + |        A  E        S  | *here's  >HAO*ERS
     + |     WH A              | what
