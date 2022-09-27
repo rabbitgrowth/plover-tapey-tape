@@ -217,6 +217,15 @@ twice its default width:
 Note that if you edit `tapey_tape.json` while Plover is running, you’ll
 have to restart Plover for the new settings to take effect.
 
+## Changelog
+
+- v0.0.6: Improved suggestions.
+- v0.0.5: Fixed an encoding issue.
+- v0.0.4: Added the `output_file` and `bar_threshold` options.
+- v0.0.3: Made the output formatting configurable.
+- v0.0.2: Added different styles of displaying translations.
+- v0.0.1: Initial version.
+
 ## Acknowledgements
 
 The name of this plugin is a tribute to
