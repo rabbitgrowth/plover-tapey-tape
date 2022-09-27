@@ -357,10 +357,12 @@ class TapeyTape:
                         seen_suggestion_keys.add(suggestion_key)
                         for outline in self.engine.dictionaries.reverse_lookup(suggestion_key):
                             if len(outline) < total_strokes:
-                                outlines.append('/'.join(outline))
+                                outlines.append(outline)
                 if outlines:
                     prefix = '' if i == 1 else str(i)
-                    chunks.append(prefix + self.config['suggestions_marker'] + ' '.join(outlines))
+                    chunks.append(prefix
+                                  + self.config['suggestions_marker']
+                                  + ' '.join(map('/'.join, sorted(outlines, key=len))))
             suggestions = ' '.join(chunks)
 
             self.was_fingerspelling = is_fingerspelling(translations[-1])
