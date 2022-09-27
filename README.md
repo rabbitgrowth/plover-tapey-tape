@@ -2,7 +2,9 @@
 
 Tapey Tape is an alternative to Plover’s built-in paper tape.
 It provides a side-by-side view of strokes and translations as well as
-some extra information.
+some extra information such as bars showing hesitation time and
+[clippy](https://github.com/tckmn/plover_clippy)-style
+suggestions showing opportunities to save strokes.
 
 ```
       |   KP   A              | {}{-|}
@@ -17,38 +19,68 @@ some extra information.
     + |  T P          P L     | {.}
 ```
 
-The bars made up of `+`s on the left show the hesitation time for
-each stroke.
-
-The hints on the right beginning with `>` are
-[clippy](https://github.com/tckmn/plover_clippy)-style suggestions
-that show opportunities to write words or phrases more efficiently.
-In the above example, it’s telling me that the two strokes I used for
-“here’s”, `HAOER/AES`, can be condensed into one, `HAO*ERS`.
-
-Instead of displaying the paper tape in a window, Tapey Tape
-outputs it to a text file named `tapey_tape.txt` in Plover’s
-configuration directory:
+Instead of displaying the paper tape in a graphical interface,
+Tapey Tape outputs it to a text file named `tapey_tape.txt`
+in Plover’s configuration directory:
 
 - Windows: `%USERPROFILE%\AppData\Local\plover`
 - macOS: `~/Library/Application Support/plover`
 - Linux: `~/.config/plover`
 
-You can review the file afterwards or use a tool like `tail -f` to
-get a real-time feed.
+You can review the file after your writing session or use a tool like
+`tail -f` to get a real-time feed.
 
-## Fingerspelling
+## Suggestions
 
-Tapey Tape tries to be clever and treats contiguous fingerspelled
-strokes as a group, so that when you
-[fingerspell “kvetch”](https://www.youtube.com/watch?v=DIfjztBuBc8)
-for example, it will only show suggestions for “kvetch”, not sub-words
-like “vet”, “vetch”, “et”, “etc”, and “etch”.
+Tapey Tape shows a suggestion whenever you write something using more
+strokes than necessary:
 
 ```
-|   KP   A              | {}{-|}
+|    P      E  R        | per
+|  T P    O    R        | for
+|    P H A      PB   S  | *performance  >PORPBGS
+```
+
+When multiple translations are referred to, the number of translations
+is shown before `>`:
+
+```
+|    P H A  E  R    T   | matter
+|             F         | of
+|  T P   A       B GT   | fact  3>PHAERBGT
+```
+
+Suggestions will be shown if you use the attach operator `{^}` to
+suppress space when you could have used a prefix, suffix, or infix:
+
+```
+|  T P H  O E       T   | note
+|  TK             L  S  | {^}
+|    PW  AO      B G    | book  2>PWAO*BG
+```
+
+Suggestions will also be shown for stroke-inefficient capitalization:
+
+```
+|   KP   A              | {-|}
+|        A   U  PB  T   | aunt  2>A*UPBT
+|  TKPW RA  EU       S  | grace
+|   KP   A            D | {*-|}  2>TKPWRA*EUS
+```
+
+Here “Aunt” is capitalized with the “capitalize next word” command
+`{-|}`, and “Grace” with the “capitalize last word” command `{*-|}`.
+In both cases you could have used the starred outline for the
+capitalized version of the word.
+
+Contiguous fingerspelling strokes are treated as a group. For example,
+[fingerspelling “kvetch”](https://www.youtube.com/watch?v=DIfjztBuBc8)
+will only trigger suggestions for “kvetch”, not sub-words like “vet”,
+“vetch”, “et”, “etc”, and “etch”.
+
+```
 |      H    E           | he
-|             F      S  | was  >>EFS HEFS
+|             F      S  | was  2>HEFS EFS
 |   K      *            | {>}{&k}
 | S     R  *            | {>}{&v}
 |          *E           | {>}{&e}
@@ -57,7 +89,7 @@ like “vet”, “vetch”, “et”, “etc”, and “etch”.
 |      H   *            | {>}{&h}  >KW*EFP
 |                  G    | {^ing}
 |    PW                 | about
-|                   T   | the  >>PW-T
+|                   T   | the  2>PW-T
 |    P  RAO EU       S  | price
 |  T P          P L     | {.}
 ```
@@ -110,7 +142,7 @@ the default values will be used.) The available options are:
 | `%r` | raw steno      | `KWRURPB`                               |
 | `%D` | definition     | `yes{,}your Honor`                      |
 | `%T` | translation    | `Yes, your Honor`                       |
-| `%s` | suggestions    | `>>KWRURPB`                             |
+| `%s` | suggestions    | `2>KWRURPB`                             |
 | `%%` | an actual `%`  | `%`                                     |
 
 The default format is `%b |%S| %D  %s`:
