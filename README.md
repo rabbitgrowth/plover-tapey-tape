@@ -1,6 +1,7 @@
 # Tapey Tape
 
-Tapey Tape is an alternative to Plover’s built-in paper tape.
+Tapey Tape is an alternative to
+[Plover](https://www.openstenoproject.org/plover/)’s built-in paper tape.
 It provides a side-by-side view of strokes and translations as well as
 some extra information such as bars showing hesitation time and
 [clippy](https://github.com/tckmn/plover_clippy)-style
