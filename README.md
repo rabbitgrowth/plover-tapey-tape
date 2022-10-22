@@ -20,105 +20,33 @@ suggestions showing opportunities to save strokes.
     + |  T P          P L     | {.}
 ```
 
-Instead of displaying the paper tape in a graphical interface,
-Tapey Tape outputs it to a text file named `tapey_tape.txt`
-in Plover’s configuration directory:
+## Viewing the paper tape
 
-- Windows: `%USERPROFILE%\AppData\Local\plover\plover` (CMD style) or
-  `$env:LOCALAPPDATA\plover\plover` (PowerShell style)
+Tapey Tape does not have a graphical interface yet. Currently, it just
+writes the paper tape to a text file named `tapey_tape.txt` in Plover’s
+configuration directory:
+
+- Windows: `C:\Users\<your username>\AppData\Local\plover\plover`
 - macOS: `~/Library/Application Support/plover`
 - Linux: `~/.config/plover`
 
-## Viewing The Log File
+To view the paper tape, simply open the file with a text editor.
 
-This plugin simply writes to a log file. It does not provide a way to view the
-log. If you do not need to view the log in realtime then you can use any text
-editor to view the file.
+To get a realtime feed, you can use the `tail -f` command in a terminal
+if you’re on macOS or Linux:
 
-If you wish to view the log in realtime while you are writing you can try some
-of these suggestions for your operating system.
+- `tail -f ~/Library/Application\ Support/plover/tapey_tape.txt` (macOS)
+- `tail -f ~/.config/plover/tapey_tape.txt` (Linux)
 
-### Linux and Mac
+Alternatively, you can use `less +F`, which has more features.
+For example, you can press `Ctrl+C` to pause the realtime feed
+and use the arrow keys to scroll up and down, press `/` to search, etc.
 
-<details><summary>expand to view more</summary><p>
-
-#### `tail -f`
-
-This is a terminal command which can read the end of your log file and continue
-streaming the new output as it is written.
-
-Use this command like this for Linux:
-
-```sh
-tail -f ~/.config/plover/tapey_tape.txt
-```
-
-Use this command like this for Mac:
-
-```sh
-tail -f ~/Library/Application Support/plover/tapey_tape.txt
-```
-
-#### `less +F`
-
-This is also a terminal command which can read the end of your log file and
-continue streaming the new output as it is written.
-
-The advantage with this over `tail -f` is that you can more easily review your
-log file.
-
-To review the log you need to press `Ctrl+c`. Then you can use arrow keys and
-any of the other movement and search features of less.
-[Reference article](https://www.linux.com/training-tutorials/tail-f-vs-less-f/)
-
-Use this command like this for Linux:
-
-```sh
-less +F ~/.config/plover/tapey_tape.txt
-```
-
-Use this command like this for Mac:
-
-```sh
-less +F ~/Library/Application Support/plover/tapey_tape.txt
-```
-
-Tmux tip: you can easily use any of these commands in a tmux mapping like this.
-These will open a split window with the log file streaming.
-
-```conf
-bind-key K split-window -h 'less +F path to your file.../tapey_tape.txt'
-bind-key k split-window -h 'tail -f path to your file.../tapey_tape.txt'
-```
-
-</p></details>
-
-### Windows
-
-<details><summary>expand to view more</summary><p>
-
-Using Windows PowerShell can help us view the log file.
+If you’re on Windows, you can use this PowerShell command:
 
 ```powershell
-Get-Content $env:LOCALAPPDATA\plover\plover\tapey_tape.txt -Tail 10 -Wait
+Get-Content $env:LOCALAPPDATA\plover\plover\tapey_tape.txt -Wait
 ```
-
-</p></details>
-
-### Text Editor Integration
-
-<details><summary>expand to view more</summary><p>
-
-- Neovim:
-  - [plover-tapey-tape.nvim](https://github.com/derekthecool/plover-tapey-tape.nvim)
-    Features a toggle view of the tapey_tape.txt file, suggestion notifications,
-    status line support, and more!
-- VSCode:
-  - [autoscrolldown](https://marketplace.visualstudio.com/items?itemName=foxx1337.autoscrolldown)
-    Warning - untested! This was the first search result. But should work to
-    tail the log file.
-
-</p></details>
 
 ## Suggestions
 
@@ -315,6 +243,12 @@ have to restart Plover for the new settings to take effect.
 - v0.0.3: Made the output formatting configurable.
 - v0.0.2: Added different styles of displaying translations.
 - v0.0.1: Initial version.
+
+## Related projects
+
+- [plover-tapey-tape.nvim](https://github.com/derekthecool/plover-tapey-tape.nvim):
+  a Neovim plugin that features a toggle view of Tapey Tape,
+  suggestion notifications, and status line integration.
 
 ## Acknowledgements
 
