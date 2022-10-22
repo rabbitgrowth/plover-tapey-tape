@@ -24,12 +24,101 @@ Instead of displaying the paper tape in a graphical interface,
 Tapey Tape outputs it to a text file named `tapey_tape.txt`
 in Plover’s configuration directory:
 
-- Windows: `%USERPROFILE%\AppData\Local\plover`
+- Windows: `%USERPROFILE%\AppData\Local\plover\plover` (CMD style) or
+  `$env:LOCALAPPDATA\plover\plover` (PowerShell style)
 - macOS: `~/Library/Application Support/plover`
 - Linux: `~/.config/plover`
 
-You can review the file after your writing session or use a tool like
-`tail -f` to get a real-time feed.
+## Viewing The Log File
+
+This plugin simply writes to a log file. It does not provide a way to view the
+log. If you do not need to view the log in realtime then you can use any text
+editor to view the file.
+
+If you wish to view the log in realtime while you are writing you can try some
+of these suggestions for your operating system.
+
+### Linux and Mac
+
+<details><summary>expand to view more</summary><p>
+
+#### `tail -f`
+
+This is a terminal command which can read the end of your log file and continue
+streaming the new output as it is written.
+
+Use this command like this for Linux:
+
+```sh
+tail -f ~/.config/plover/tapey_tape.txt
+```
+
+Use this command like this for Mac:
+
+```sh
+tail -f ~/Library/Application Support/plover/tapey_tape.txt
+```
+
+#### `less +F`
+
+This is also a terminal command which can read the end of your log file and
+continue streaming the new output as it is written.
+
+The advantage with this over `tail -f` is that you can more easily review your
+log file.
+
+To review the log you need to press `Ctrl+c`. Then you can use arrow keys and
+any of the other movement and search features of less.
+[Reference article](https://www.linux.com/training-tutorials/tail-f-vs-less-f/)
+
+Use this command like this for Linux:
+
+```sh
+less +F ~/.config/plover/tapey_tape.txt
+```
+
+Use this command like this for Mac:
+
+```sh
+less +F ~/Library/Application Support/plover/tapey_tape.txt
+```
+
+Tmux tip: you can easily use any of these commands in a tmux mapping like this.
+These will open a split window with the log file streaming.
+
+```conf
+bind-key K split-window -h 'less +F path to your file.../tapey_tape.txt'
+bind-key k split-window -h 'tail -f path to your file.../tapey_tape.txt'
+```
+
+</p></details>
+
+### Windows
+
+<details><summary>expand to view more</summary><p>
+
+Using Windows PowerShell can help us view the log file.
+
+```powershell
+Get-Content $env:LOCALAPPDATA\plover\plover\tapey_tape.txt -Tail 10 -Wait
+```
+
+</p></details>
+
+### Text Editor Integration
+
+<details><summary>expand to view more</summary><p>
+
+- Neovim:
+  - [plover-tapey-tape.nvim](https://github.com/derekthecool/plover-tapey-tape.nvim)
+    Features a toggle view of the tapey_tape.txt file, suggestion notifications,
+    status line support, and more!
+- VSCode:
+  - [autoscrolldown](https://marketplace.visualstudio.com/items?itemName=foxx1337.autoscrolldown)
+    Warning - untested! This was the first search result. But should work to
+    tail the log file.
+
+</p></details>
 
 ## Suggestions
 
