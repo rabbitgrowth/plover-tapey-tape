@@ -41,6 +41,7 @@ if you’re on macOS or Linux:
 Alternatively, you can use `less +F`, which has more features.
 For example, you can press `Ctrl+C` to pause the realtime feed
 and use the arrow keys to scroll up and down, press `/` to search, etc.
+You can then press `F` to resume the realtime feed.
 
 If you’re on Windows, you can use this PowerShell command:
 
